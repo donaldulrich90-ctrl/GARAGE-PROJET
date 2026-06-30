@@ -17,5 +17,6 @@ urlpatterns = [
     path("caisse/", include("invoicing.urls")),
     path("depenses/", include("expenses.urls")),
     path("rh/", include("hr.urls")),
+    path("garages/", include("tenants.urls")),
     path("rapports/", include("dashboard.report_urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

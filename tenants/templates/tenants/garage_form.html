@@ -1,0 +1,153 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }}{% endblock %}
+{% block page_title %}{{ action }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl space-y-6">
+
+  <form method="post" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Informations du garage -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="font-bold text-[#1A1A1A] text-sm mb-4 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-[#FFCD11] inline-block"></span>
+        Informations du garage
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Nom du garage <span class="text-red-500">*</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<p class="text-red-600 text-xs mt-1">{{ form.name.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Ville</label>
+          {{ form.city }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
+          {{ form.phone }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">WhatsApp</label>
+          {{ form.whatsapp_number }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+          {{ form.email }}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
+          {{ form.address }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Plan d'abonnement</label>
+          {{ form.plan }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Fin de période d'essai</label>
+          {{ form.trial_ends_at }}
+        </div>
+        {% if form.logo %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Logo</label>
+          {{ form.logo }}
+          {% if garage.logo %}
+          <img src="{{ garage.logo.url }}" class="h-12 mt-2 rounded" alt="Logo actuel">
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="sm:col-span-2 flex items-center gap-2 mt-1">
+          {{ form.faest_supplier_enabled }}
+          <label class="text-sm font-semibold text-gray-700">Approvisionnement FAEST activé</label>
+        </div>
+        {% if form.is_active %}
+        <div class="sm:col-span-2 flex items-center gap-2">
+          {{ form.is_active }}
+          <label class="text-sm font-semibold text-gray-700">Garage actif</label>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if form.admin_username %}
+    <!-- Compte administrateur -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="font-bold text-[#1A1A1A] text-sm mb-4 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-blue-500 inline-block"></span>
+        Compte administrateur du garage
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Identifiant <span class="text-red-500">*</span></label>
+          {{ form.admin_username }}
+          {% if form.admin_username.errors %}<p class="text-red-600 text-xs mt-1">{{ form.admin_username.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Mot de passe <span class="text-red-500">*</span></label>
+          {{ form.admin_password }}
+          {% if form.admin_password.errors %}<p class="text-red-600 text-xs mt-1">{{ form.admin_password.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Prénom</label>
+          {{ form.admin_first_name }}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Nom</label>
+          {{ form.admin_last_name }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+    <p class="text-red-600 text-sm">{{ form.non_field_errors|join:", " }}</p>
+    {% endif %}
+
+    <div class="flex gap-3">
+      <button type="submit"
+              class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-2.5 px-6 rounded-lg text-sm transition-colors">
+        {{ action }}
+      </button>
+      <a href="{% url 'garage_list' %}"
+         class="py-2.5 px-4 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Annuler
+      </a>
+    </div>
+  </form>
+
+  <!-- Liste des utilisateurs du garage (mode édition) -->
+  {% if staff %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="font-bold text-[#1A1A1A] text-sm mb-4 flex items-center gap-2">
+      <span class="h-2 w-2 rounded-full bg-gray-400 inline-block"></span>
+      Utilisateurs ({{ staff|length }})
+    </h2>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-400 uppercase border-b border-gray-100">
+          <th class="pb-2 text-left">Identifiant</th>
+          <th class="pb-2 text-left">Nom</th>
+          <th class="pb-2 text-left">Rôle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in staff %}
+        <tr class="border-b border-gray-50 last:border-0">
+          <td class="py-2 font-mono text-xs text-gray-600">{{ u.username }}</td>
+          <td class="py-2 text-gray-700">{{ u.get_full_name|default:"—" }}</td>
+          <td class="py-2">
+            <span class="px-2 py-0.5 rounded text-xs font-semibold
+              {% if u.role == 'admin' %}bg-[#FFCD11] text-[#1A1A1A]{% else %}bg-gray-100 text-gray-700{% endif %}">
+              {{ u.get_role_display|default:"—" }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,6 +1,14 @@
 {% extends "dashboard/base.html" %}
 {% block title %}Vue plateforme{% endblock %}
 {% block page_title %}Vue plateforme{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'garage_create' %}"
+     class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouveau garage
+  </a>
+{% endblock %}
+
 {% block content %}
 <div class="grid grid-cols-2 gap-4 mb-6">
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 border-l-4 border-l-[#FFCD11]">
@@ -13,9 +21,18 @@
   </div>
 </div>
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-  <p class="text-gray-600 text-sm">Vous êtes connecté en tant que <strong class="text-[#1A1A1A]">staff plateforme</strong>.</p>
-  <p class="text-gray-500 text-sm mt-2">
-    Accédez à l'<a href="/admin/" class="text-[#7A5C00] underline hover:text-[#5A4000]">administration Django</a> pour gérer tous les garages.
+  <p class="text-gray-600 text-sm">
+    Vous êtes connecté en tant que <strong class="text-[#1A1A1A]">staff plateforme</strong>.
   </p>
+  <div class="mt-4 flex gap-3">
+    <a href="{% url 'garage_list' %}"
+       class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+      Gérer les garages
+    </a>
+    <a href="/admin/"
+       class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+      Administration Django
+    </a>
+  </div>
 </div>
 {% endblock %}

@@ -1,0 +1,88 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Garages — Plateforme{% endblock %}
+{% block page_title %}Gestion des garages{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'garage_create' %}"
+     class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouveau garage
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Garage</th>
+        <th class="px-4 py-3 text-left">Ville</th>
+        <th class="px-4 py-3 text-left">Plan</th>
+        <th class="px-4 py-3 text-center">Utilisateurs</th>
+        <th class="px-4 py-3 text-center">FAEST</th>
+        <th class="px-4 py-3 text-center">Statut</th>
+        <th class="px-4 py-3 text-left">Fin essai</th>
+        <th class="px-4 py-3 text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for garage in garages %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors {% if not garage.is_active %}opacity-50{% endif %}">
+        <td class="px-4 py-3">
+          <div class="font-bold text-[#1A1A1A]">{{ garage.name }}</div>
+          {% if garage.phone %}
+          <div class="text-xs text-gray-400">{{ garage.phone }}</div>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-600">{{ garage.city|default:"—" }}</td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-0.5 rounded text-xs font-bold
+            {% if garage.plan == 'business' %}bg-[#FFCD11] text-[#1A1A1A]
+            {% elif garage.plan == 'pro' %}bg-blue-100 text-blue-800
+            {% else %}bg-gray-100 text-gray-700{% endif %}">
+            {{ garage.get_plan_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-center font-bold text-gray-700">{{ garage.users.count }}</td>
+        <td class="px-4 py-3 text-center">
+          {% if garage.faest_supplier_enabled %}
+            <span class="bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-bold">Oui</span>
+          {% else %}
+            <span class="text-gray-300 text-xs">—</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-center">
+          {% if garage.is_active %}
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">Actif</span>
+          {% else %}
+            <span class="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-semibold">Inactif</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-400 text-xs">
+          {{ garage.trial_ends_at|date:"d/m/Y"|default:"—" }}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <div class="flex items-center justify-end gap-3">
+            <a href="{% url 'garage_edit' garage.pk %}"
+               class="text-[#7A5C00] hover:text-[#5A4000] font-semibold text-xs">Modifier</a>
+            <form method="post" action="{% url 'garage_toggle' garage.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit"
+                      class="text-xs font-semibold {% if garage.is_active %}text-red-500 hover:text-red-700{% else %}text-green-600 hover:text-green-800{% endif %}">
+                {% if garage.is_active %}Désactiver{% else %}Activer{% endif %}
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="px-4 py-10 text-center text-gray-400">
+          Aucun garage enregistré. <a href="{% url 'garage_create' %}" class="text-[#7A5C00] underline">Créer le premier</a>.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ garages|length }} garage(s) au total</p>
+{% endblock %}

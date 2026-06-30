@@ -1,0 +1,126 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }}{% endblock %}
+{% block page_title %}{{ action }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl space-y-6">
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- En-tête -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="font-bold text-[#1A1A1A] text-sm mb-4 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-[#FFCD11] inline-block"></span>
+        Informations client
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Client existant</label>
+          {{ form.client }}
+          {% if form.client.errors %}<p class="text-red-600 text-xs mt-1">{{ form.client.errors|join:", " }}</p>{% endif %}
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Ou nom libre</label>
+          {{ form.client_name }}
+        </div>
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Notes / Remarques</label>
+          {{ form.notes }}
+        </div>
+      </div>
+      {% if form.non_field_errors %}
+      <p class="text-red-600 text-xs mt-2">{{ form.non_field_errors|join:", " }}</p>
+      {% endif %}
+    </div>
+
+    <!-- Lignes articles -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="font-bold text-[#1A1A1A] text-sm mb-4 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-blue-500 inline-block"></span>
+        Articles / Prestations
+        <span class="text-xs text-gray-400 font-normal ml-1">— Sélectionnez une pièce du stock (le prix se remplit) ou saisissez une ligne libre</span>
+      </h2>
+
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}
+      <p class="text-red-600 text-xs mb-2">{{ formset.non_form_errors|join:", " }}</p>
+      {% endif %}
+
+      <div id="formset-container" class="space-y-3">
+        {% for line_form in formset %}
+        <div class="formset-row grid grid-cols-12 gap-2 items-start p-3 rounded-lg border border-gray-100 bg-gray-50
+                    {% if line_form.instance.pk %}border-l-4 border-l-[#FFCD11]{% endif %}">
+          {{ line_form.id }}
+          <!-- Pièce stock -->
+          <div class="col-span-12 sm:col-span-3">
+            <label class="block text-xs text-gray-500 mb-1">Pièce stock (optionnel)</label>
+            {{ line_form.part }}
+            {% if line_form.part.errors %}<p class="text-red-600 text-xs">{{ line_form.part.errors|join:", " }}</p>{% endif %}
+          </div>
+          <!-- Désignation -->
+          <div class="col-span-12 sm:col-span-4">
+            <label class="block text-xs text-gray-500 mb-1">Désignation <span class="text-red-500">*</span></label>
+            {{ line_form.description }}
+            {% if line_form.description.errors %}<p class="text-red-600 text-xs">{{ line_form.description.errors|join:", " }}</p>{% endif %}
+          </div>
+          <!-- Quantité -->
+          <div class="col-span-4 sm:col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Qté</label>
+            {{ line_form.quantity }}
+          </div>
+          <!-- Prix unitaire -->
+          <div class="col-span-6 sm:col-span-2">
+            <label class="block text-xs text-gray-500 mb-1">Prix unit. (FCFA)</label>
+            {{ line_form.unit_price }}
+          </div>
+          <!-- Supprimer -->
+          <div class="col-span-2 sm:col-span-1 flex items-end pb-1">
+            {% if line_form.can_delete %}
+            <label class="flex items-center gap-1 text-xs text-red-400 cursor-pointer hover:text-red-600">
+              {{ line_form.DELETE }}
+              <span>Suppr.</span>
+            </label>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit"
+              class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-2.5 px-6 rounded-lg text-sm transition-colors">
+        {{ action }}
+      </button>
+      <a href="{% url 'proforma_list' %}"
+         class="py-2.5 px-4 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        Annuler
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+const PARTS_DATA = {{ parts_json|safe }};
+
+document.addEventListener('change', function(e) {
+  if (!e.target.classList.contains('part-select')) return;
+  const row = e.target.closest('.formset-row');
+  if (!row) return;
+  const partId = e.target.value;
+  const descInput = row.querySelector('input[name$="-description"]');
+  const priceInput = row.querySelector('input[name$="-unit_price"]');
+  if (partId && PARTS_DATA[partId]) {
+    const part = PARTS_DATA[partId];
+    if (descInput && !descInput.value) descInput.value = part.reference + ' — ' + part.name;
+    if (priceInput && !priceInput.value) priceInput.value = part.price;
+    const stockInfo = row.querySelector('.stock-info');
+    if (stockInfo) stockInfo.remove();
+    const badge = document.createElement('span');
+    badge.className = 'stock-info text-xs ml-1 ' + (part.stock <= 0 ? 'text-red-600 font-bold' : 'text-gray-400');
+    badge.textContent = 'Stock : ' + part.stock;
+    e.target.parentNode.appendChild(badge);
+  }
+});
+</script>
+{% endblock %}

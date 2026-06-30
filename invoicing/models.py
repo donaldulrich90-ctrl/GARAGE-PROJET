@@ -103,6 +103,94 @@ class Invoice(TenantModel):
         return self.total - self.amount_paid
 
 
+class ProformaInvoice(TenantModel):
+    """
+    Facture proforma autonome (sans ordre de réparation obligatoire).
+    Workflow : proforma → invoice (définitive) → receipt (payée + stock décrémenté).
+    """
+
+    STATUS_PROFORMA = "proforma"
+    STATUS_INVOICE = "invoice"
+    STATUS_RECEIPT = "receipt"
+
+    STATUS_CHOICES = [
+        (STATUS_PROFORMA, "Facture Proforma"),
+        (STATUS_INVOICE, "Facture Définitive"),
+        (STATUS_RECEIPT, "Reçu (Payée)"),
+    ]
+
+    PAYMENT_METHODS = [
+        ("cash", "Espèces"),
+        ("mobile_money", "Mobile Money"),
+        ("bank_transfer", "Virement bancaire"),
+    ]
+
+    reference = models.CharField(max_length=20, unique=True, blank=True)
+    client = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="proforma_invoices",
+    )
+    client_name = models.CharField(
+        "Nom client (libre)", max_length=150, blank=True,
+        help_text="Remplir uniquement si le client n'est pas dans la base."
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PROFORMA)
+    notes = models.TextField(blank=True)
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHODS, blank=True,
+    )
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Facture Proforma"
+        verbose_name_plural = "Factures Proforma"
+
+    def __str__(self):
+        return self.reference or f"Proforma #{self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = gen_reference("PRO")
+        super().save(*args, **kwargs)
+
+    @property
+    def display_client(self):
+        if self.client:
+            return self.client.full_name
+        return self.client_name or "—"
+
+    @property
+    def total(self):
+        return sum(line.line_total for line in self.lines.all())
+
+
+class ProformaInvoiceLine(models.Model):
+    """Ligne d'une facture proforma — article stock ou ligne libre."""
+
+    proforma = models.ForeignKey(ProformaInvoice, on_delete=models.CASCADE, related_name="lines")
+    part = models.ForeignKey(
+        "inventory.Part",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="proforma_lines",
+    )
+    description = models.CharField("Désignation", max_length=200)
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField("Prix unit. (FCFA)", max_digits=12, decimal_places=2)
+
+    @property
+    def line_total(self):
+        return self.quantity * self.unit_price
+
+    def __str__(self):
+        return f"{self.quantity} x {self.description}"
+
+
 class Payment(models.Model):
     METHOD_CASH = "cash"
     METHOD_MOBILE_MONEY = "mobile_money"

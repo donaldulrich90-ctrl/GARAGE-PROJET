@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    {% if proforma.status == 'receipt' %}Reçu{% elif proforma.status == 'invoice' %}Facture{% else %}Proforma{% endif %}
+    — {{ proforma.reference }}
+  </title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900 max-w-2xl mx-auto p-8 font-sans">
+
+  <!-- Bouton impression -->
+  <div class="no-print mb-6 flex gap-3">
+    <button onclick="window.print()"
+            class="bg-[#FFCD11] text-[#1A1A1A] font-bold px-5 py-2 rounded-lg text-sm hover:bg-[#E6B800]">
+      Imprimer / PDF
+    </button>
+    <a href="{% url 'proforma_detail' proforma.pk %}"
+       class="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+      ← Retour
+    </a>
+  </div>
+
+  <!-- En-tête garage -->
+  <div class="flex justify-between items-start mb-8 pb-6 border-b-2 border-[#FFCD11]">
+    <div>
+      <div class="text-2xl font-black text-[#1A1A1A]">{{ garage.name }}</div>
+      {% if garage.city %}<div class="text-sm text-gray-500">{{ garage.city }}</div>{% endif %}
+      {% if garage.address %}<div class="text-sm text-gray-500">{{ garage.address }}</div>{% endif %}
+      {% if garage.phone %}<div class="text-sm text-gray-500">Tél : {{ garage.phone }}</div>{% endif %}
+      {% if garage.email %}<div class="text-sm text-gray-500">{{ garage.email }}</div>{% endif %}
+    </div>
+    <div class="text-right">
+      <div class="text-3xl font-black uppercase tracking-wide
+        {% if proforma.status == 'receipt' %}text-green-600
+        {% elif proforma.status == 'invoice' %}text-orange-600
+        {% else %}text-blue-600{% endif %}">
+        {% if proforma.status == 'receipt' %}REÇU{% elif proforma.status == 'invoice' %}FACTURE{% else %}PROFORMA{% endif %}
+      </div>
+      <div class="text-lg font-bold text-[#1A1A1A] mt-1 font-mono">{{ proforma.reference }}</div>
+      <div class="text-sm text-gray-500 mt-1">{{ proforma.created_at|date:"d/m/Y" }}</div>
+      {% if proforma.paid_at %}
+      <div class="text-sm text-green-600 font-semibold mt-1">Payé le {{ proforma.paid_at|date:"d/m/Y" }}</div>
+      <div class="text-xs text-gray-500">via {{ proforma.get_payment_method_display }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Destinataire -->
+  <div class="mb-6">
+    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Destinataire</p>
+    <p class="text-lg font-bold text-[#1A1A1A]">{{ proforma.display_client }}</p>
+    {% if proforma.client and proforma.client.phone %}
+    <p class="text-sm text-gray-500">{{ proforma.client.phone }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Notes -->
+  {% if proforma.notes %}
+  <div class="mb-4 text-sm text-gray-600 italic">{{ proforma.notes }}</div>
+  {% endif %}
+
+  <!-- Tableau des lignes -->
+  <table class="w-full text-sm border-collapse mb-6">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-[#FFCD11] uppercase text-xs">
+        <th class="px-3 py-2.5 text-left">Réf.</th>
+        <th class="px-3 py-2.5 text-left">Désignation</th>
+        <th class="px-3 py-2.5 text-center">Qté</th>
+        <th class="px-3 py-2.5 text-right">P.U. FCFA</th>
+        <th class="px-3 py-2.5 text-right">Total FCFA</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in proforma.lines.all %}
+      <tr class="border-b border-gray-100">
+        <td class="px-3 py-2 font-mono text-xs text-gray-500">
+          {% if line.part %}{{ line.part.reference }}{% else %}—{% endif %}
+        </td>
+        <td class="px-3 py-2 font-semibold text-[#1A1A1A]">{{ line.description }}</td>
+        <td class="px-3 py-2 text-center">{{ line.quantity }}</td>
+        <td class="px-3 py-2 text-right">{{ line.unit_price }}</td>
+        <td class="px-3 py-2 text-right font-bold">{{ line.line_total }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="border-t-2 border-[#FFCD11] bg-yellow-50">
+        <td colspan="4" class="px-3 py-3 text-right font-black text-[#1A1A1A] uppercase tracking-wide">TOTAL À PAYER</td>
+        <td class="px-3 py-3 text-right font-black text-xl text-[#1A1A1A]">{{ proforma.total }} FCFA</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  {% if proforma.status == 'receipt' %}
+  <!-- Confirmation paiement -->
+  <div class="border-2 border-green-500 rounded-lg p-4 text-center bg-green-50">
+    <p class="text-green-700 font-black text-lg">REÇU DE PAIEMENT</p>
+    <p class="text-green-600 font-semibold">Somme de {{ proforma.total }} FCFA reçue le {{ proforma.paid_at|date:"d/m/Y à H:i" }}</p>
+    <p class="text-green-600 text-sm">Mode : {{ proforma.get_payment_method_display }}</p>
+  </div>
+  {% else %}
+  <!-- Conditions -->
+  <div class="text-xs text-gray-400 mt-6 border-t border-gray-100 pt-4">
+    {% if proforma.status == 'proforma' %}
+    <p>Ce document est une facture proforma et ne constitue pas un titre de créance.</p>
+    {% else %}
+    <p>Facture payable à réception. Merci de votre confiance.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Pied de page -->
+  <div class="mt-8 text-center text-xs text-gray-300">
+    {{ garage.name }}{% if garage.city %} — {{ garage.city }}{% endif %}
+  </div>
+
+</body>
+</html>

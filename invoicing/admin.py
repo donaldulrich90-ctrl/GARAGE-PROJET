@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from core.admin import TenantScopedAdmin
-from .models import Quote, QuoteLine, Invoice, Payment
+from .models import Invoice, Payment, ProformaInvoice, ProformaInvoiceLine, Quote, QuoteLine
 
 
 class QuoteLineInline(admin.TabularInline):
@@ -31,3 +31,16 @@ class InvoiceAdmin(TenantScopedAdmin, admin.ModelAdmin):
     list_filter = ("status", "garage")
     inlines = [PaymentInline]
     readonly_fields = ("reference",)
+
+
+class ProformaLineInline(admin.TabularInline):
+    model = ProformaInvoiceLine
+    extra = 0
+
+
+@admin.register(ProformaInvoice)
+class ProformaInvoiceAdmin(TenantScopedAdmin, admin.ModelAdmin):
+    list_display = ("reference", "display_client", "status", "total", "paid_at", "garage")
+    list_filter = ("status", "garage")
+    inlines = [ProformaLineInline]
+    readonly_fields = ("reference", "paid_at")
