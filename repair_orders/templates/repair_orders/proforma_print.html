@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Proforma {{ order.reference }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 30px; }
+    .no-print { text-align: right; margin-bottom: 20px; }
+    .no-print button {
+      background: #1A1A1A; color: #fff; border: none; padding: 8px 20px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 8px;
+    }
+    .no-print button.close { background: #888; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #FFCD11; padding-bottom: 16px; margin-bottom: 20px; }
+    .garage-name { font-size: 20px; font-weight: 900; color: #1A1A1A; }
+    .garage-info { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.6; }
+    .doc-title { text-align: right; }
+    .doc-title h1 { font-size: 22px; font-weight: 900; color: #1A1A1A; letter-spacing: 1px; }
+    .doc-title .ref { font-size: 13px; color: #888; margin-top: 4px; }
+    .doc-title .proforma-badge {
+      display: inline-block; background: #FFF3CD; color: #7A5C00;
+      border: 1px solid #FFCD11; border-radius: 4px; padding: 2px 10px;
+      font-weight: 700; font-size: 11px; margin-top: 6px;
+    }
+    .parties { display: flex; gap: 30px; margin-bottom: 20px; }
+    .party { flex: 1; background: #F8F8F6; border: 1px solid #E5E5E5; border-radius: 6px; padding: 12px 16px; }
+    .party-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .party-name { font-weight: 700; font-size: 14px; color: #1A1A1A; }
+    .party-info { font-size: 12px; color: #555; margin-top: 3px; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead th { background: #1A1A1A; color: #FFCD11; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; }
+    thead th:last-child { text-align: right; }
+    tbody td { padding: 8px 10px; border-bottom: 1px solid #F0F0F0; font-size: 12px; }
+    tbody td:last-child { text-align: right; font-weight: 600; }
+    tfoot td { padding: 8px 10px; font-weight: 700; font-size: 13px; }
+    .section-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; }
+    .total-box { float: right; width: 280px; border: 2px solid #FFCD11; border-radius: 6px; padding: 14px 16px; margin-top: 10px; }
+    .total-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+    .total-row.grand { font-size: 16px; font-weight: 900; border-top: 1px solid #FFCD11; padding-top: 8px; margin-top: 6px; }
+    .clearfix::after { content: ""; display: table; clear: both; }
+    .notes { margin-top: 40px; border-top: 1px solid #E5E5E5; padding-top: 14px; font-size: 11px; color: #888; }
+    .validity { background: #FFFBE0; border: 1px solid #FFCD11; border-radius: 4px; padding: 8px 12px; font-size: 12px; color: #7A5C00; margin-top: 20px; display: inline-block; }
+    @media print {
+      .no-print { display: none; }
+      body { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨 Imprimer</button>
+  <button class="close" onclick="window.close()">✕ Fermer</button>
+</div>
+
+<header>
+  <div>
+    <div class="garage-name">{{ garage.name }}</div>
+    <div class="garage-info">
+      {% if garage.address %}{{ garage.address }}<br>{% endif %}
+      {% if garage.city %}{{ garage.city }}<br>{% endif %}
+      {% if garage.phone %}Tél : {{ garage.phone }}<br>{% endif %}
+      {% if garage.email %}{{ garage.email }}{% endif %}
+    </div>
+  </div>
+  <div class="doc-title">
+    <h1>FACTURE PROFORMA</h1>
+    <div class="ref">Réf. OR : {{ order.reference }}</div>
+    <div class="ref">Date : {{ today|date:"d/m/Y" }}</div>
+    <div class="proforma-badge">DOCUMENT NON CONTRACTUEL</div>
+  </div>
+</header>
+
+<div class="parties">
+  <div class="party">
+    <div class="party-label">Client</div>
+    <div class="party-name">{{ order.client.full_name }}</div>
+    <div class="party-info">
+      {% if order.client.phone %}Tél : {{ order.client.phone }}<br>{% endif %}
+      {% if order.client.email %}{{ order.client.email }}{% endif %}
+    </div>
+  </div>
+  <div class="party">
+    <div class="party-label">Véhicule</div>
+    <div class="party-name">{{ order.vehicle.plate_number }}</div>
+    <div class="party-info">
+      {{ order.vehicle.make }} {{ order.vehicle.model }}
+      {% if order.vehicle.year %} ({{ order.vehicle.year }}){% endif %}<br>
+      {% if order.mileage_at_reception %}Kilométrage : {{ order.mileage_at_reception }} km{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if order.client_complaint %}
+<div class="section-title">Motif / Plainte client</div>
+<p style="font-size:12px; color:#444; margin-bottom:16px; padding: 8px 12px; background:#F8F8F6; border-radius:4px;">{{ order.client_complaint }}</p>
+{% endif %}
+
+{% if order.tasks.exists %}
+<div class="section-title">Main d'œuvre</div>
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th style="text-align:right">Montant (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in order.tasks.all %}
+    <tr>
+      <td>{{ task.description }}</td>
+      <td>{{ task.cost }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr style="background:#F8F8F6;">
+      <td>Sous-total main d'œuvre</td>
+      <td style="text-align:right">{{ order.total_labor }} FCFA</td>
+    </tr>
+  </tfoot>
+</table>
+{% endif %}
+
+{% if order.parts_used.exists %}
+<div class="section-title">Pièces et fournitures</div>
+<table>
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th style="text-align:center">Qté</th>
+      <th style="text-align:right">P.U. (FCFA)</th>
+      <th style="text-align:right">Total (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for op in order.parts_used.all %}
+    <tr>
+      <td>{{ op.part.name }}</td>
+      <td style="text-align:center">{{ op.quantity }}</td>
+      <td style="text-align:right">{{ op.unit_price }}</td>
+      <td>{{ op.line_total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr style="background:#F8F8F6;">
+      <td colspan="3">Sous-total pièces</td>
+      <td style="text-align:right">{{ order.total_parts }} FCFA</td>
+    </tr>
+  </tfoot>
+</table>
+{% endif %}
+
+<div class="clearfix">
+  <div class="total-box">
+    <div class="total-row"><span>Main d'œuvre</span><span>{{ order.total_labor }} FCFA</span></div>
+    <div class="total-row"><span>Pièces</span><span>{{ order.total_parts }} FCFA</span></div>
+    <div class="total-row grand"><span>TOTAL ESTIMÉ</span><span>{{ order.total_cost }} FCFA</span></div>
+  </div>
+</div>
+
+<div class="validity">
+  Ce devis est un document informatif établi le {{ today|date:"d/m/Y" }}.
+  Les montants peuvent évoluer selon le diagnostic définitif.
+</div>
+
+<div class="notes">
+  <p>Signature client (bon pour accord) : ___________________________________</p>
+  <br>
+  <p>{{ garage.name }} — {{ garage.address }}{% if garage.city %}, {{ garage.city }}{% endif %} — Tél : {{ garage.phone }}</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,132 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ employee.full_name }}{% endblock %}
+{% block page_title %}{{ employee.full_name }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'employee_update' employee.pk %}"
+     class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'employee_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour RH</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Colonne gauche : fiche -->
+  <div class="space-y-5">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fiche personnelle</h2>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Type</dt>
+          <dd>
+            {% if employee.employee_type == 'stagiaire' %}
+              <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Stagiaire</span>
+            {% else %}
+              <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">Employé</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Poste</dt>
+          <dd class="font-medium">{{ employee.post }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Date d'entrée</dt>
+          <dd class="font-medium">{{ employee.start_date|date:"d/m/Y" }}</dd>
+        </div>
+        {% if employee.phone %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Téléphone</dt>
+          <dd class="font-medium">{{ employee.phone }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex justify-between border-t border-gray-100 pt-3">
+          <dt class="font-bold text-[#1A1A1A]">Salaire mensuel</dt>
+          <dd class="font-black text-[#7A5C00] text-base">{{ employee.monthly_pay }} FCFA</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Statut</dt>
+          <dd>
+            {% if employee.is_active %}
+              <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Actif</span>
+            {% else %}
+              <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">Inactif</span>
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+      {% if employee.notes %}
+      <div class="mt-4 pt-3 border-t border-gray-100">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Notes</p>
+        <p class="text-sm text-gray-600">{{ employee.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Générer bulletin -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">Générer un bulletin de paie</h3>
+      <form method="post" action="{% url 'payroll_generate' employee.pk %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Mois</label>
+          <input type="month" name="month" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Notes (optionnel)</label>
+          <textarea name="notes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+        <button type="submit"
+                class="w-full bg-[#FFCD11] text-[#1A1A1A] py-2.5 rounded-lg text-sm font-black hover:bg-[#E6B800] transition-colors">
+          Générer le bulletin
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Colonne droite : historique des bulletins -->
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+        Historique des bulletins
+        <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ payrolls|length }}</span>
+      </h2>
+      {% if payrolls %}
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 uppercase border-b">
+            <th class="pb-2 text-left">Réf.</th>
+            <th class="pb-2 text-left">Mois</th>
+            <th class="pb-2 text-right">Montant</th>
+            <th class="pb-2 text-left">Notes</th>
+            <th class="pb-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for p in payrolls %}
+          <tr>
+            <td class="py-3 font-mono text-xs text-gray-500">{{ p.reference }}</td>
+            <td class="py-3 font-medium">{{ p.month|date:"F Y" }}</td>
+            <td class="py-3 text-right font-black text-green-700">{{ p.amount }} FCFA</td>
+            <td class="py-3 text-xs text-gray-400">{{ p.notes|default:"—" }}</td>
+            <td class="py-3 text-right">
+              <a href="{% url 'payslip_print' p.pk %}" target="_blank"
+                 class="text-[#7A5C00] text-xs font-semibold hover:underline">🖨 Bulletin</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-sm text-gray-400">Aucun bulletin généré.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

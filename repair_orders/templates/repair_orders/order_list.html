@@ -1,0 +1,72 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Ordres de réparation{% endblock %}
+{% block page_title %}Ordres de réparation{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'order_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvel ordre
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex flex-wrap gap-3">
+  <input type="text" name="q" value="{{ q }}" placeholder="Référence, immatriculation, client, motif de panne…"
+         class="flex-1 min-w-64 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Tous les statuts</option>
+    {% for val, label in status_choices %}
+    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Filtrer
+  </button>
+  {% if q or status_filter %}
+  <a href="{% url 'order_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕ Effacer</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Référence</th>
+        <th class="px-4 py-3 text-left">Véhicule</th>
+        <th class="px-4 py-3 text-left">Client</th>
+        <th class="px-4 py-3 text-left">Motif</th>
+        <th class="px-4 py-3 text-left">Statut</th>
+        <th class="px-4 py-3 text-right">Total</th>
+        <th class="px-4 py-3 text-left">Reçu le</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for order in orders %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3 font-mono font-bold">
+          <a href="{% url 'order_detail' order.pk %}" class="text-[#7A5C00] hover:underline">{{ order.reference }}</a>
+        </td>
+        <td class="px-4 py-3 font-mono font-medium text-gray-700">{{ order.vehicle.plate_number }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ order.client.full_name }}</td>
+        <td class="px-4 py-3 text-gray-500 max-w-xs truncate">{{ order.client_complaint|truncatechars:50|default:"—" }}</td>
+        <td class="px-4 py-3">
+          {% include "dashboard/snippets/order_badge.html" with status=order.status label=order.get_status_display %}
+        </td>
+        <td class="px-4 py-3 text-right font-bold text-[#1A1A1A]">{{ order.total_cost }} FCFA</td>
+        <td class="px-4 py-3 text-gray-500 text-xs">{{ order.received_at|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'order_update' order.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+          {% if q or status_filter %}Aucun ordre trouvé.{% else %}Aucun ordre de réparation.{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ orders|length }} ordre(s)</p>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'order_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-semibold">
+    + Nouvel ordre
+  </a>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-[#FFCD11]">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">OR en cours</p>
+    <p class="text-3xl font-black text-[#1A1A1A] mt-1">{{ orders_open }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-amber-500">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Véhicules prêts</p>
+    <p class="text-3xl font-black text-amber-600 mt-1">{{ orders_ready }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-gray-400">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Véhicules suivis</p>
+    <p class="text-3xl font-black text-gray-800 mt-1">{{ vehicles_count }}</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 border-l-4 border-l-red-500">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Pièces à réappro.</p>
+    <p class="text-3xl font-black text-red-600 mt-1">{{ low_stock_parts|length }}</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Alertes stock -->
+  {% if low_stock_parts %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+    <h2 class="font-bold text-sm text-[#1A1A1A] mb-3 flex items-center gap-2">
+      <span class="h-2 w-2 rounded-full bg-red-500 inline-block"></span>
+      Pièces sous le seuil d'alerte
+    </h2>
+    <ul class="space-y-2 text-sm">
+      {% for part in low_stock_parts %}
+      <li class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+        <span>
+          <span class="font-semibold text-[#1A1A1A]">{{ part.name }}</span>
+          <span class="text-gray-400 ml-1 text-xs">({{ part.reference }})</span>
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="text-red-600 font-bold">{{ part.quantity_in_stock }}</span>
+          {% if part.supplier.is_faest %}
+          <span class="bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-bold">FAEST</span>
+          {% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Factures impayées -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+    <h2 class="font-bold text-sm text-[#1A1A1A] mb-3 flex items-center gap-2">
+      <span class="h-2 w-2 rounded-full bg-orange-500 inline-block"></span>
+      Factures impayées
+    </h2>
+    {% if unpaid_invoices %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-400 uppercase border-b">
+          <th class="pb-2 text-left">Référence</th>
+          <th class="pb-2 text-right">Solde dû</th>
+          <th class="pb-2 text-right">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in unpaid_invoices %}
+        <tr class="border-b border-gray-50 last:border-0">
+          <td class="py-2">
+            <a href="{% url 'invoice_detail' inv.pk %}" class="text-[#7A5C00] hover:underline font-semibold">{{ inv.reference }}</a>
+          </td>
+          <td class="py-2 text-right text-red-600 font-bold">{{ inv.balance_due }} FCFA</td>
+          <td class="py-2 text-right">
+            <span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-medium">{{ inv.get_status_display }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucune facture impayée. ✓</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Derniers OR -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mt-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-bold text-sm text-[#1A1A1A]">Derniers ordres de réparation</h2>
+    <a href="{% url 'order_list' %}" class="text-xs text-[#7A5C00] hover:underline font-medium">Voir tout →</a>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-3 py-2.5 text-left rounded-l-lg">Référence</th>
+        <th class="px-3 py-2.5 text-left">Véhicule</th>
+        <th class="px-3 py-2.5 text-left">Client</th>
+        <th class="px-3 py-2.5 text-left rounded-r-lg">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in recent_orders %}
+      <tr class="border-b border-gray-50 last:border-0 hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-3 py-2.5">
+          <a href="{% url 'order_detail' order.pk %}" class="text-[#7A5C00] hover:underline font-semibold font-mono">{{ order.reference }}</a>
+        </td>
+        <td class="px-3 py-2.5 text-gray-600 font-mono text-xs">{{ order.vehicle }}</td>
+        <td class="px-3 py-2.5 text-gray-600">{{ order.client }}</td>
+        <td class="px-3 py-2.5">
+          {% include "dashboard/snippets/order_badge.html" with status=order.status label=order.get_status_display %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="py-6 text-gray-400 text-center">Aucun ordre de réparation.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

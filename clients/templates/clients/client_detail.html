@@ -1,0 +1,95 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ client.full_name }}{% endblock %}
+{% block page_title %}{{ client.full_name }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'client_update' client.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+  <a href="{% url 'vehicle_create_for_client' client.pk %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Ajouter un véhicule
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'client_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux clients</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Fiche client -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Informations</h2>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Type</dt>
+        <dd class="font-semibold text-[#1A1A1A]">{{ client.get_client_type_display }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Téléphone</dt>
+        <dd class="font-semibold text-[#1A1A1A]">{{ client.phone }}</dd>
+      </div>
+      {% if client.whatsapp_number %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">WhatsApp</dt>
+        <dd class="font-semibold text-[#1A1A1A]">{{ client.whatsapp_number }}</dd>
+      </div>
+      {% endif %}
+      {% if client.email %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Email</dt>
+        <dd class="font-semibold text-[#1A1A1A]">{{ client.email }}</dd>
+      </div>
+      {% endif %}
+      {% if client.address %}
+      <div>
+        <dt class="text-gray-500 mb-1">Adresse</dt>
+        <dd class="font-semibold text-[#1A1A1A]">{{ client.address }}</dd>
+      </div>
+      {% endif %}
+      {% if client.notes %}
+      <div class="pt-2 border-t border-gray-50">
+        <dt class="text-gray-500 mb-1">Notes</dt>
+        <dd class="text-gray-600 italic text-xs">{{ client.notes }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+  </div>
+
+  <!-- Véhicules -->
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+        Véhicules
+        <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-black">{{ client.vehicles.count }}</span>
+      </h2>
+    </div>
+    {% if client.vehicles.exists %}
+    <div class="space-y-3">
+      {% for vehicle in client.vehicles.all %}
+      <div class="border border-gray-100 rounded-lg p-4 hover:border-[#FFCD11] hover:bg-[#FFFBE0] transition-colors">
+        <div class="flex items-center justify-between">
+          <div>
+            <a href="{% url 'vehicle_detail' vehicle.pk %}" class="font-bold text-[#7A5C00] hover:underline font-mono">
+              {{ vehicle.plate_number }}
+            </a>
+            <span class="text-gray-600 ml-2 text-sm">{{ vehicle.make }} {{ vehicle.model }}{% if vehicle.year %} ({{ vehicle.year }}){% endif %}</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span>{{ vehicle.get_fuel_type_display }}</span>
+            <span>{{ vehicle.mileage|default:0 }} km</span>
+            <a href="{% url 'vehicle_update' vehicle.pk %}" class="text-gray-400 hover:text-[#7A5C00] font-medium">Modifier</a>
+          </div>
+        </div>
+        {% if vehicle.repair_orders.exists %}
+        <p class="text-xs text-gray-400 mt-1">{{ vehicle.repair_orders.count }} ordre(s) de réparation</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucun véhicule enregistré pour ce client.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

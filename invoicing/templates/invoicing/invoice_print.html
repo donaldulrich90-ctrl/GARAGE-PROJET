@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Facture {{ invoice.reference }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 30px; }
+    .no-print { text-align: right; margin-bottom: 20px; }
+    .no-print button {
+      background: #1A1A1A; color: #fff; border: none; padding: 8px 20px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 8px;
+    }
+    .no-print button.close { background: #888; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #FFCD11; padding-bottom: 16px; margin-bottom: 20px; }
+    .garage-name { font-size: 20px; font-weight: 900; color: #1A1A1A; }
+    .garage-info { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.6; }
+    .doc-title { text-align: right; }
+    .doc-title h1 { font-size: 22px; font-weight: 900; color: #1A1A1A; letter-spacing: 1px; }
+    .doc-title .ref { font-size: 13px; color: #555; margin-top: 4px; }
+    .status-badge {
+      display: inline-block; border-radius: 4px; padding: 3px 12px;
+      font-weight: 700; font-size: 11px; margin-top: 6px; text-transform: uppercase;
+    }
+    .status-paid { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+    .status-partial { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .status-unpaid { background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+    .parties { display: flex; gap: 30px; margin-bottom: 20px; }
+    .party { flex: 1; background: #F8F8F6; border: 1px solid #E5E5E5; border-radius: 6px; padding: 12px 16px; }
+    .party-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .party-name { font-weight: 700; font-size: 14px; color: #1A1A1A; }
+    .party-info { font-size: 12px; color: #555; margin-top: 3px; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead th { background: #1A1A1A; color: #FFCD11; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; }
+    thead th:last-child { text-align: right; }
+    tbody td { padding: 8px 10px; border-bottom: 1px solid #F0F0F0; font-size: 12px; }
+    tbody td:last-child { text-align: right; font-weight: 600; }
+    tfoot td { padding: 8px 10px; font-weight: 700; font-size: 13px; }
+    .section-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; }
+    .total-box { float: right; width: 300px; border: 2px solid #1A1A1A; border-radius: 6px; padding: 14px 16px; margin-top: 10px; }
+    .total-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+    .total-row.grand { font-size: 16px; font-weight: 900; border-top: 2px solid #FFCD11; padding-top: 8px; margin-top: 6px; color: #1A1A1A; }
+    .total-row.paid-row { color: #065F46; font-weight: 700; }
+    .total-row.balance { font-size: 15px; font-weight: 900; color: #991B1B; }
+    .total-row.balance.zero { color: #065F46; }
+    .clearfix::after { content: ""; display: table; clear: both; }
+    .payments-table { margin-top: 30px; }
+    .notes { margin-top: 40px; border-top: 1px solid #E5E5E5; padding-top: 14px; font-size: 11px; color: #888; }
+    @media print {
+      .no-print { display: none; }
+      body { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨 Imprimer</button>
+  <button class="close" onclick="window.close()">✕ Fermer</button>
+</div>
+
+<header>
+  <div>
+    <div class="garage-name">{{ garage.name }}</div>
+    <div class="garage-info">
+      {% if garage.address %}{{ garage.address }}<br>{% endif %}
+      {% if garage.city %}{{ garage.city }}<br>{% endif %}
+      {% if garage.phone %}Tél : {{ garage.phone }}<br>{% endif %}
+      {% if garage.email %}{{ garage.email }}{% endif %}
+    </div>
+  </div>
+  <div class="doc-title">
+    <h1>FACTURE</h1>
+    <div class="ref">N° {{ invoice.reference }}</div>
+    <div class="ref">Émise le : {{ invoice.issued_at|date:"d/m/Y" }}</div>
+    {% if invoice.status == 'paid' %}
+      <span class="status-badge status-paid">✓ Payée intégralement</span>
+    {% elif invoice.status == 'partial' %}
+      <span class="status-badge status-partial">Partiellement payée</span>
+    {% else %}
+      <span class="status-badge status-unpaid">Non payée</span>
+    {% endif %}
+  </div>
+</header>
+
+<div class="parties">
+  <div class="party">
+    <div class="party-label">Client</div>
+    <div class="party-name">{{ order.client.full_name }}</div>
+    <div class="party-info">
+      {% if order.client.phone %}Tél : {{ order.client.phone }}<br>{% endif %}
+      {% if order.client.email %}{{ order.client.email }}{% endif %}
+    </div>
+  </div>
+  <div class="party">
+    <div class="party-label">Véhicule</div>
+    <div class="party-name">{{ order.vehicle.plate_number }}</div>
+    <div class="party-info">
+      {{ order.vehicle.make }} {{ order.vehicle.model }}
+      {% if order.vehicle.year %} ({{ order.vehicle.year }}){% endif %}<br>
+      Réf. OR : {{ order.reference }}<br>
+      {% if order.mileage_at_reception %}Kilométrage : {{ order.mileage_at_reception }} km{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if order.tasks.exists %}
+<div class="section-title">Main d'œuvre</div>
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th style="text-align:right">Montant (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in order.tasks.all %}
+    <tr>
+      <td>{{ task.description }}</td>
+      <td>{{ task.cost }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr style="background:#F8F8F6;">
+      <td>Sous-total main d'œuvre</td>
+      <td style="text-align:right">{{ order.total_labor }} FCFA</td>
+    </tr>
+  </tfoot>
+</table>
+{% endif %}
+
+{% if order.parts_used.exists %}
+<div class="section-title">Pièces et fournitures</div>
+<table>
+  <thead>
+    <tr>
+      <th>Désignation</th>
+      <th style="text-align:center">Qté</th>
+      <th style="text-align:right">P.U. (FCFA)</th>
+      <th style="text-align:right">Total (FCFA)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for op in order.parts_used.all %}
+    <tr>
+      <td>{{ op.part.name }}</td>
+      <td style="text-align:center">{{ op.quantity }}</td>
+      <td style="text-align:right">{{ op.unit_price }}</td>
+      <td>{{ op.line_total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr style="background:#F8F8F6;">
+      <td colspan="3">Sous-total pièces</td>
+      <td style="text-align:right">{{ order.total_parts }} FCFA</td>
+    </tr>
+  </tfoot>
+</table>
+{% endif %}
+
+<div class="clearfix">
+  <div class="total-box">
+    <div class="total-row"><span>Main d'œuvre</span><span>{{ order.total_labor }} FCFA</span></div>
+    <div class="total-row"><span>Pièces</span><span>{{ order.total_parts }} FCFA</span></div>
+    <div class="total-row grand"><span>TOTAL</span><span>{{ invoice.total }} FCFA</span></div>
+    <div class="total-row paid-row"><span>Encaissé</span><span>{{ invoice.amount_paid }} FCFA</span></div>
+    <div class="total-row balance {% if invoice.balance_due <= 0 %}zero{% endif %}">
+      <span>SOLDE DÛ</span><span>{{ invoice.balance_due }} FCFA</span>
+    </div>
+  </div>
+</div>
+
+{% if payments %}
+<div class="payments-table">
+  <div class="section-title">Historique des paiements</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Mode</th>
+        <th style="text-align:right">Montant (FCFA)</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.paid_at|date:"d/m/Y à H:i" }}</td>
+        <td>{{ p.get_method_display }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.note|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="notes">
+  <p>{{ garage.name }} — {{ garage.address }}{% if garage.city %}, {{ garage.city }}{% endif %} — Tél : {{ garage.phone }}</p>
+  <p style="margin-top:6px">Merci de votre confiance.</p>
+</div>
+
+</body>
+</html>

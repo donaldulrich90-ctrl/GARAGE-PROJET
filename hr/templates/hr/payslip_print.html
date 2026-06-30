@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulletin de paie {{ payroll.reference }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #1A1A1A; background: #fff; padding: 20px; }
+    .btn-print { margin-bottom: 20px; background: #FFCD11; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .page { max-width: 680px; margin: 0 auto; border: 2px solid #1A1A1A; border-radius: 8px; overflow: hidden; }
+    .header { background: #1A1A1A; color: #FFCD11; padding: 20px 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header h1 { font-size: 20px; letter-spacing: 1px; }
+    .header .garage-info { font-size: 11px; color: #ccc; line-height: 1.6; text-align: right; }
+    .badge { display: inline-block; background: #FFCD11; color: #1A1A1A; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 20px; margin-bottom: 4px; }
+    .body { padding: 24px; }
+    .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 10px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .info-block { background: #F9F9F7; border-radius: 6px; padding: 12px; }
+    .info-block label { font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 4px; }
+    .info-block span { font-size: 14px; font-weight: bold; color: #1A1A1A; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+    th { text-align: left; font-size: 10px; color: #888; text-transform: uppercase; font-weight: bold; padding: 6px 8px; border-bottom: 2px solid #eee; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0; }
+    .total-box { background: #1A1A1A; color: #fff; border-radius: 8px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .total-box .label { font-size: 13px; font-weight: bold; color: #ccc; }
+    .total-box .amount { font-size: 28px; font-weight: 900; color: #FFCD11; }
+    .footer { margin-top: 32px; display: flex; justify-content: space-between; font-size: 11px; color: #888; }
+    .signature-line { border-top: 1px solid #ccc; padding-top: 6px; margin-top: 36px; }
+    @media print {
+      .btn-print { display: none; }
+      body { padding: 0; }
+      .page { border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
+
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="badge">BULLETIN DE PAIE</div>
+      <h1>{{ payroll.reference }}</h1>
+      <p style="font-size:12px; color:#ccc; margin-top:4px;">{{ payroll.month|date:"F Y" }}</p>
+    </div>
+    <div class="garage-info">
+      <strong style="color:#fff;">{{ garage.name }}</strong><br>
+      {% if garage.city %}{{ garage.city }}<br>{% endif %}
+      {% if garage.phone %}{{ garage.phone }}<br>{% endif %}
+      {% if garage.email %}{{ garage.email }}{% endif %}
+    </div>
+  </div>
+
+  <div class="body">
+    <p class="section-title">Informations employé</p>
+    <div class="info-grid">
+      <div class="info-block">
+        <label>Nom complet</label>
+        <span>{{ employee.full_name }}</span>
+      </div>
+      <div class="info-block">
+        <label>Poste</label>
+        <span>{{ employee.post }}</span>
+      </div>
+      <div class="info-block">
+        <label>Type</label>
+        <span>{{ employee.get_employee_type_display }}</span>
+      </div>
+      <div class="info-block">
+        <label>Date d'entrée</label>
+        <span>{{ employee.start_date|date:"d/m/Y" }}</span>
+      </div>
+    </div>
+
+    <p class="section-title">Détail de la rémunération</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Désignation</th>
+          <th style="text-align:right">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{% if employee.employee_type == 'stagiaire' %}Indemnité de stage{% else %}Salaire de base{% endif %} — {{ payroll.month|date:"F Y" }}</td>
+          <td style="text-align:right; font-weight:bold;">{{ payroll.amount }} FCFA</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <span class="label">NET À PAYER</span>
+      <span class="amount">{{ payroll.amount }} FCFA</span>
+    </div>
+
+    {% if payroll.notes %}
+    <p style="margin-top:16px; font-size:12px; color:#666;">Notes : {{ payroll.notes }}</p>
+    {% endif %}
+
+    <div class="footer">
+      <div>
+        <p>Émis le {{ today|date:"d/m/Y" }}</p>
+        <p>Réf : {{ payroll.reference }}</p>
+      </div>
+      <div class="signature-line" style="text-align:right; min-width:200px;">
+        <p>Signature employeur</p>
+        <br><br>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

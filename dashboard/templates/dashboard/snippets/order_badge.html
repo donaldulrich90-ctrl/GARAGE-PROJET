@@ -1,0 +1,7 @@
+{% if status == 'received' %}<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>
+{% elif status == 'diagnosis' %}<span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>
+{% elif status == 'in_progress' %}<span class="bg-orange-100 text-orange-800 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>
+{% elif status == 'ready' %}<span class="bg-[#FFCD11] text-[#1A1A1A] text-xs px-2.5 py-0.5 rounded-full font-bold">{{ label }}</span>
+{% elif status == 'delivered' %}<span class="bg-green-100 text-green-800 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>
+{% elif status == 'cancelled' %}<span class="bg-gray-100 text-gray-500 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>
+{% else %}<span class="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full font-semibold">{{ label }}</span>{% endif %}

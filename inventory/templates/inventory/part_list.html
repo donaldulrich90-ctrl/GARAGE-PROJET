@@ -1,0 +1,83 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Stock — Pièces{% endblock %}
+{% block page_title %}Pièces / Stock{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'supplier_list' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Fournisseurs
+  </a>
+  <a href="{% url 'part_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvelle pièce
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex gap-3">
+  <input type="text" name="q" value="{{ q }}" placeholder="Référence, désignation, catégorie…"
+         class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <label class="flex items-center gap-2 text-sm text-gray-600 border border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-50 select-none">
+    <input type="checkbox" name="alert" value="1" {% if alert_filter %}checked{% endif %} class="h-4 w-4 accent-[#FFCD11]">
+    Alerte stock seulement
+  </label>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Filtrer
+  </button>
+  {% if q or alert_filter %}
+  <a href="{% url 'part_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Référence</th>
+        <th class="px-4 py-3 text-left">Désignation</th>
+        <th class="px-4 py-3 text-left">Catégorie</th>
+        <th class="px-4 py-3 text-left">Fournisseur</th>
+        <th class="px-4 py-3 text-right">Prix unit.</th>
+        <th class="px-4 py-3 text-center">Stock</th>
+        <th class="px-4 py-3 text-center">Seuil</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for part in parts %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors {% if part.needs_reorder %}bg-red-50{% endif %}">
+        <td class="px-4 py-3 font-mono text-xs font-bold text-gray-700">{{ part.reference }}</td>
+        <td class="px-4 py-3 font-semibold text-[#1A1A1A]">
+          {{ part.name }}
+          {% if part.needs_reorder %}
+          <span class="ml-1 text-xs text-red-600 font-bold">⚠</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-500">{{ part.category|default:"—" }}</td>
+        <td class="px-4 py-3">
+          {% if part.supplier %}
+            <span class="text-gray-600">{{ part.supplier.name }}</span>
+            {% if part.supplier.is_faest %}
+            <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] text-xs px-1.5 py-0.5 rounded-full font-bold">FAEST</span>
+            {% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3 text-right font-bold text-[#1A1A1A]">{{ part.unit_price }} FCFA</td>
+        <td class="px-4 py-3 text-center">
+          <span class="font-black text-base {% if part.needs_reorder %}text-red-600{% else %}text-[#1A1A1A]{% endif %}">
+            {{ part.quantity_in_stock }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-center text-gray-400">{{ part.alert_threshold }}</td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'part_update' part.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-400">Aucune pièce trouvée.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ parts|length }} pièce(s)</p>
+{% endblock %}

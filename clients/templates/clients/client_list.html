@@ -1,0 +1,64 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Clients{% endblock %}
+{% block page_title %}Clients{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'client_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-semibold">
+    + Nouveau client
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex gap-3">
+  <input type="text" name="q" value="{{ q }}" placeholder="Rechercher par nom, téléphone, email…"
+         class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Rechercher
+  </button>
+  {% if q %}
+  <a href="{% url 'client_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕ Effacer</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Nom / Raison sociale</th>
+        <th class="px-4 py-3 text-left">Type</th>
+        <th class="px-4 py-3 text-left">Téléphone</th>
+        <th class="px-4 py-3 text-left">Email</th>
+        <th class="px-4 py-3 text-center">Véhicules</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for client in clients %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3 font-semibold">
+          <a href="{% url 'client_detail' client.pk %}" class="text-[#7A5C00] hover:underline">{{ client.full_name }}</a>
+        </td>
+        <td class="px-4 py-3 text-gray-500">{{ client.get_client_type_display }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ client.phone }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ client.email|default:"—" }}</td>
+        <td class="px-4 py-3 text-center">
+          <span class="bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-bold">
+            {{ client.vehicles.count }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'client_update' client.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+          {% if q %}Aucun client trouvé pour "{{ q }}".{% else %}Aucun client enregistré.{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ clients|length }} client(s)</p>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ vehicle.plate_number }}{% endblock %}
+{% block page_title %}{{ vehicle.plate_number }} — {{ vehicle.make }} {{ vehicle.model }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'vehicle_update' vehicle.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+  <a href="{% url 'order_create' %}?vehicle={{ vehicle.pk }}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvel OR
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'vehicle_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux véhicules</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Fiche véhicule -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fiche véhicule</h2>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Immatriculation</dt>
+        <dd class="font-mono font-black text-[#1A1A1A]">{{ vehicle.plate_number }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Marque</dt>
+        <dd class="font-semibold">{{ vehicle.make }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Modèle</dt>
+        <dd class="font-semibold">{{ vehicle.model }}</dd>
+      </div>
+      {% if vehicle.year %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Année</dt>
+        <dd>{{ vehicle.year }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Carburant</dt>
+        <dd>{{ vehicle.get_fuel_type_display }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Kilométrage</dt>
+        <dd class="font-semibold">{{ vehicle.mileage|default:0 }} km</dd>
+      </div>
+      {% if vehicle.vin %}
+      <div>
+        <dt class="text-gray-500 mb-1">N° châssis (VIN)</dt>
+        <dd class="font-mono text-xs text-gray-700 break-all">{{ vehicle.vin }}</dd>
+      </div>
+      {% endif %}
+      {% if vehicle.color %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Couleur</dt>
+        <dd>{{ vehicle.color }}</dd>
+      </div>
+      {% endif %}
+      <div class="pt-2 border-t border-gray-100">
+        <dt class="text-gray-500 mb-1">Propriétaire</dt>
+        <dd>
+          <a href="{% url 'client_detail' vehicle.client.pk %}" class="text-[#7A5C00] hover:underline font-semibold">
+            {{ vehicle.client.full_name }}
+          </a>
+          <span class="text-gray-400 ml-1 text-xs">— {{ vehicle.client.phone }}</span>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- Historique des OR -->
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+      Historique réparations
+      <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ repair_orders|length }}</span>
+    </h2>
+    {% if repair_orders %}
+    <div class="space-y-3">
+      {% for order in repair_orders %}
+      <div class="border border-gray-100 rounded-lg p-4 hover:border-[#FFCD11] hover:bg-[#FFFBE0] transition-colors">
+        <div class="flex items-center justify-between">
+          <a href="{% url 'order_detail' order.pk %}" class="font-bold text-[#7A5C00] hover:underline font-mono">
+            {{ order.reference }}
+          </a>
+          {% include "dashboard/snippets/order_badge.html" with status=order.status label=order.get_status_display %}
+        </div>
+        {% if order.client_complaint %}
+        <p class="text-sm text-gray-600 mt-1">{{ order.client_complaint|truncatechars:80 }}</p>
+        {% endif %}
+        <p class="text-xs text-gray-400 mt-1">
+          Reçu le {{ order.received_at|date:"d/m/Y" }}
+          {% if order.assigned_mechanic %} — Mécanicien : {{ order.assigned_mechanic.get_full_name|default:order.assigned_mechanic.username }}{% endif %}
+        </p>
+        <p class="text-xs font-bold text-[#1A1A1A] mt-1">Total : {{ order.total_cost }} FCFA</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucun ordre de réparation pour ce véhicule.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

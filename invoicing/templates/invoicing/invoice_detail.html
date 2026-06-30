@@ -1,0 +1,202 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ invoice.reference }}{% endblock %}
+{% block page_title %}Facture {{ invoice.reference }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'invoice_print' invoice.pk %}" target="_blank"
+     class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    🖨 Imprimer la facture
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'invoice_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour à la caisse</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Colonne gauche -->
+  <div class="space-y-5">
+
+    <!-- Récapitulatif financier -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Récapitulatif</h2>
+        {% if invoice.status == 'paid' %}
+          <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-bold">✓ Payée</span>
+        {% elif invoice.status == 'partial' %}
+          <span class="bg-orange-100 text-orange-700 text-xs px-3 py-1 rounded-full font-semibold">Partielle</span>
+        {% else %}
+          <span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-semibold">Non payée</span>
+        {% endif %}
+      </div>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Émise le</dt>
+          <dd class="font-medium">{{ invoice.issued_at|date:"d/m/Y" }}</dd>
+        </div>
+        <div class="flex justify-between border-t border-gray-100 pt-3">
+          <dt class="text-gray-600 font-semibold">Total à payer</dt>
+          <dd class="font-black text-[#1A1A1A] text-base">{{ invoice.total }} FCFA</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-600">Déjà encaissé</dt>
+          <dd class="font-bold text-green-700">{{ invoice.amount_paid }} FCFA</dd>
+        </div>
+        <div class="flex justify-between border-t border-gray-100 pt-3">
+          <dt class="font-black text-[#1A1A1A]">Solde restant</dt>
+          <dd class="font-black text-xl {% if invoice.balance_due > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+            {{ invoice.balance_due }} FCFA
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- OR lié -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Ordre de réparation</h3>
+      <a href="{% url 'order_detail' invoice.repair_order.pk %}" class="text-[#7A5C00] font-bold hover:underline">
+        {{ invoice.repair_order.reference }}
+      </a>
+      <p class="text-sm text-gray-600 mt-2">
+        <a href="{% url 'vehicle_detail' invoice.repair_order.vehicle.pk %}" class="font-mono font-bold hover:text-[#7A5C00]">
+          {{ invoice.repair_order.vehicle.plate_number }}
+        </a>
+        <span class="text-gray-400 ml-1">— {{ invoice.repair_order.vehicle.make }} {{ invoice.repair_order.vehicle.model }}</span>
+      </p>
+      <p class="text-sm text-gray-600 mt-1">
+        <a href="{% url 'client_detail' invoice.repair_order.client.pk %}" class="hover:text-[#7A5C00] font-medium">
+          {{ invoice.repair_order.client.full_name }}
+        </a>
+      </p>
+      <div class="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500 space-y-1">
+        <div class="flex justify-between">
+          <span>Main d'œuvre</span>
+          <span class="font-medium">{{ invoice.repair_order.total_labor }} FCFA</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Pièces</span>
+          <span class="font-medium">{{ invoice.repair_order.total_parts }} FCFA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire paiement -->
+    {% if invoice.balance_due > 0 %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-sm font-bold text-[#1A1A1A] mb-4">Enregistrer un paiement</h3>
+      <form method="post" action="{% url 'payment_add' invoice.pk %}" novalidate>
+        {% csrf_token %}
+        {% for field in payment_form %}
+        <div class="mb-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}{% for e in field.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-[#FFCD11] text-[#1A1A1A] py-2.5 rounded-lg text-sm font-black hover:bg-[#E6B800] transition-colors mt-1">
+          Enregistrer le paiement
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Historique + détail -->
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+        Historique des paiements
+        <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ payments|length }}</span>
+      </h2>
+      {% if payments %}
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 uppercase border-b">
+            <th class="pb-2 text-left">Date</th>
+            <th class="pb-2 text-left">Méthode</th>
+            <th class="pb-2 text-right">Montant</th>
+            <th class="pb-2 text-left">Note</th>
+            <th class="pb-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for payment in payments %}
+          <tr>
+            <td class="py-3 text-gray-500 text-xs">{{ payment.paid_at|date:"d/m/Y à H:i" }}</td>
+            <td class="py-3">
+              {% if payment.method == 'cash' %}
+                <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">Espèces</span>
+              {% elif payment.method == 'mobile_money' %}
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Mobile Money</span>
+              {% else %}
+                <span class="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full">Virement</span>
+              {% endif %}
+            </td>
+            <td class="py-3 text-right font-black text-green-700">{{ payment.amount }} FCFA</td>
+            <td class="py-3 text-gray-500 text-xs">{{ payment.note|default:"—" }}</td>
+            <td class="py-3 text-right">
+              <a href="{% url 'payment_receipt' invoice.pk payment.pk %}" target="_blank"
+                 class="text-[#7A5C00] text-xs font-semibold hover:underline">🖨 Reçu</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="border-t">
+          <tr>
+            <td colspan="2" class="pt-3 text-sm font-bold text-[#1A1A1A]">Total encaissé</td>
+            <td class="pt-3 text-right font-black text-green-700">{{ invoice.amount_paid }} FCFA</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      {% else %}
+      <p class="text-sm text-gray-400">Aucun paiement enregistré.</p>
+      {% endif %}
+    </div>
+
+    <!-- Détail prestations -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-5">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Détail des prestations</h2>
+      {% with ro=invoice.repair_order %}
+      {% if ro.tasks.exists %}
+      <h4 class="text-xs text-gray-400 font-bold uppercase mb-2 tracking-wider">Main d'œuvre</h4>
+      <table class="w-full text-sm mb-4">
+        <tbody class="divide-y divide-gray-50">
+          {% for task in ro.tasks.all %}
+          <tr>
+            <td class="py-2 text-gray-700">{{ task.description }}</td>
+            <td class="py-2 text-right font-semibold">{{ task.cost }} FCFA</td>
+          </tr>
+          {% endfor %}
+          <tr class="border-t font-bold">
+            <td class="py-2 text-gray-600">Sous-total MO</td>
+            <td class="py-2 text-right text-[#1A1A1A]">{{ ro.total_labor }} FCFA</td>
+          </tr>
+        </tbody>
+      </table>
+      {% endif %}
+      {% if ro.parts_used.exists %}
+      <h4 class="text-xs text-gray-400 font-bold uppercase mb-2 tracking-wider">Pièces</h4>
+      <table class="w-full text-sm mb-2">
+        <tbody class="divide-y divide-gray-50">
+          {% for op in ro.parts_used.all %}
+          <tr>
+            <td class="py-2 text-gray-700">{{ op.part.name }} × {{ op.quantity }}</td>
+            <td class="py-2 text-right font-semibold">{{ op.line_total }} FCFA</td>
+          </tr>
+          {% endfor %}
+          <tr class="border-t font-bold">
+            <td class="py-2 text-gray-600">Sous-total pièces</td>
+            <td class="py-2 text-right text-[#1A1A1A]">{{ ro.total_parts }} FCFA</td>
+          </tr>
+        </tbody>
+      </table>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

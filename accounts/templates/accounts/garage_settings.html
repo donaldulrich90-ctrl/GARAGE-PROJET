@@ -1,0 +1,77 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Paramètres du garage{% endblock %}
+{% block page_title %}Paramètres du garage{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-6">
+
+  {% if garage.logo %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-5">
+    <img src="{{ garage.logo.url }}" alt="Logo {{ garage.name }}"
+         class="h-20 w-20 object-contain rounded-lg border border-gray-200 p-1">
+    <div>
+      <p class="text-sm font-bold text-[#1A1A1A]">Logo actuel</p>
+      <p class="text-xs text-gray-400 mt-0.5">Téléversez un nouveau fichier ci-dessous pour le remplacer.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Nom du garage <span class="text-red-500">*</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<p class="text-red-600 text-xs mt-1">{{ form.name.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Ville</label>
+          {{ form.city }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Téléphone</label>
+          {{ form.phone }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">WhatsApp</label>
+          {{ form.whatsapp_number }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+          {{ form.email }}
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Adresse</label>
+          {{ form.address }}
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Logo (PNG ou JPG)</label>
+          <input type="file" name="logo" accept="image/*"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600
+                        file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0
+                        file:text-sm file:font-semibold file:bg-[#FFFBE0] file:text-[#7A5C00]
+                        hover:file:bg-[#FFCD11] hover:file:text-[#1A1A1A]">
+          {% if form.logo.errors %}<p class="text-red-600 text-xs mt-1">{{ form.logo.errors|join:", " }}</p>{% endif %}
+        </div>
+
+      </div>
+
+      <div class="pt-2 border-t border-gray-100">
+        <button type="submit"
+                class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-2.5 px-6 rounded-lg text-sm transition-colors">
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

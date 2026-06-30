@@ -1,0 +1,250 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ order.reference }}{% endblock %}
+{% block page_title %}{{ order.reference }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'order_proforma' order.pk %}" target="_blank" class="border border-[#FFCD11] text-[#7A5C00] text-sm px-4 py-2 rounded-lg hover:bg-[#FFFBE0] transition-colors font-semibold">
+    🖨 Proforma
+  </a>
+  <a href="{% url 'order_update' order.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+  {% if next_status %}
+  <form method="post" action="{% url 'order_status' order.pk next_status %}" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+      → {{ next_status_label }}
+    </button>
+  </form>
+  {% endif %}
+  {% if order.status != 'cancelled' and order.status != 'delivered' %}
+  <form method="post" action="{% url 'order_status' order.pk 'cancelled' %}" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="border border-red-300 text-red-600 text-sm px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
+            onclick="return confirm('Annuler cet ordre ?')">
+      Annuler l'OR
+    </button>
+  </form>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'order_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux ordres</a>
+</div>
+
+<!-- Statut -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+  <div class="flex flex-wrap items-center gap-4">
+    {% include "dashboard/snippets/order_badge.html" with status=order.status label=order.get_status_display %}
+    <span class="text-gray-400 text-sm">Reçu le {{ order.received_at|date:"d/m/Y à H:i" }}</span>
+    {% if order.expected_at %}
+    <span class="text-gray-400 text-sm">— Prévu le {{ order.expected_at|date:"d/m/Y" }}</span>
+    {% endif %}
+    {% if order.delivered_at %}
+    <span class="text-green-700 text-sm font-semibold">— Livré le {{ order.delivered_at|date:"d/m/Y" }}</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Colonne gauche -->
+  <div class="space-y-5">
+    <!-- Véhicule -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Véhicule</h3>
+      <a href="{% url 'vehicle_detail' order.vehicle.pk %}" class="font-mono font-black text-[#7A5C00] hover:underline text-lg">
+        {{ order.vehicle.plate_number }}
+      </a>
+      <p class="text-gray-700 mt-1 text-sm">{{ order.vehicle.make }} {{ order.vehicle.model }}{% if order.vehicle.year %} ({{ order.vehicle.year }}){% endif %}</p>
+      <p class="text-xs text-gray-500 mt-1">{{ order.vehicle.get_fuel_type_display }} — {{ order.mileage_at_reception }} km à la réception</p>
+    </div>
+
+    <!-- Client -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Client</h3>
+      <a href="{% url 'client_detail' order.client.pk %}" class="font-semibold text-[#7A5C00] hover:underline">
+        {{ order.client.full_name }}
+      </a>
+      <p class="text-sm text-gray-500 mt-1">{{ order.client.phone }}</p>
+      {% if order.client.whatsapp_number %}
+      <p class="text-sm text-gray-500">WhatsApp : {{ order.client.whatsapp_number }}</p>
+      {% endif %}
+    </div>
+
+    <!-- Résumé financier -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Résumé financier</h3>
+      {% if order.assigned_mechanic %}
+      <p class="text-sm text-gray-600 mb-3">Mécanicien : <span class="font-semibold text-[#1A1A1A]">{{ order.assigned_mechanic.get_full_name|default:order.assigned_mechanic.username }}</span></p>
+      {% endif %}
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Main d'œuvre</span>
+          <span class="font-medium">{{ order.total_labor }} FCFA</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Pièces</span>
+          <span class="font-medium">{{ order.total_parts }} FCFA</span>
+        </div>
+        <div class="flex justify-between border-t border-gray-100 pt-2 font-bold">
+          <span>Total</span>
+          <span class="text-[#7A5C00]">{{ order.total_cost }} FCFA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Factures -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Factures</h3>
+      {% for inv in invoices %}
+      <div class="flex items-center justify-between mb-2">
+        <a href="{% url 'invoice_detail' inv.pk %}" class="text-[#7A5C00] hover:underline text-sm font-semibold">{{ inv.reference }}</a>
+        {% if inv.status == 'paid' %}<span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Payée</span>
+        {% elif inv.status == 'partial' %}<span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-medium">Partielle</span>
+        {% else %}<span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">Non payée</span>{% endif %}
+      </div>
+      {% empty %}
+      <p class="text-sm text-gray-400 mb-3">Aucune facture.</p>
+      {% endfor %}
+      <form method="post" action="{% url 'order_create_invoice' order.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="w-full mt-1 border-2 border-[#FFCD11] text-[#7A5C00] text-sm py-1.5 rounded-lg hover:bg-[#FFFBE0] transition-colors font-semibold">
+          + Créer une facture
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Colonne droite -->
+  <div class="lg:col-span-2 space-y-5">
+
+    <!-- Motif + diagnostic -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Motif / Diagnostic</h3>
+      {% if order.client_complaint %}
+      <div class="mb-3">
+        <p class="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Motif client</p>
+        <p class="text-sm text-gray-700">{{ order.client_complaint }}</p>
+      </div>
+      {% endif %}
+      {% if order.diagnosis_notes %}
+      <div>
+        <p class="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wide">Notes diagnostic</p>
+        <p class="text-sm text-gray-700">{{ order.diagnosis_notes }}</p>
+      </div>
+      {% endif %}
+      {% if not order.client_complaint and not order.diagnosis_notes %}
+      <p class="text-sm text-gray-400">Aucune note.</p>
+      {% endif %}
+    </div>
+
+    <!-- Tâches main d'œuvre -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Tâches de main d'œuvre</h3>
+      {% if order.tasks.exists %}
+      <table class="w-full text-sm mb-4">
+        <thead>
+          <tr class="text-xs text-gray-400 border-b">
+            <th class="pb-2 text-left">Description</th>
+            <th class="pb-2 text-left">Mécanicien</th>
+            <th class="pb-2 text-right">Coût</th>
+            <th class="pb-2 text-center">Fait</th>
+            <th class="pb-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for task in order.tasks.all %}
+          <tr>
+            <td class="py-2 text-gray-700">{{ task.description }}</td>
+            <td class="py-2 text-gray-500 text-xs">{% if task.mechanic %}{{ task.mechanic.get_full_name|default:task.mechanic.username }}{% else %}—{% endif %}</td>
+            <td class="py-2 text-right font-semibold">{{ task.cost }} FCFA</td>
+            <td class="py-2 text-center">{% if task.is_done %}<span class="text-green-600 font-bold">✓</span>{% else %}<span class="text-gray-300">○</span>{% endif %}</td>
+            <td class="py-2 text-right">
+              <form method="post" action="{% url 'task_delete' order.pk task.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-red-400 hover:text-red-600 text-xs" onclick="return confirm('Supprimer ?')">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <details class="mt-2">
+        <summary class="text-sm text-[#7A5C00] cursor-pointer hover:text-[#5A4000] font-semibold">+ Ajouter une tâche</summary>
+        <form method="post" action="{% url 'task_add' order.pk %}" class="mt-3 border-t border-gray-100 pt-3">
+          {% csrf_token %}
+          <div class="grid grid-cols-2 gap-3">
+            {% for field in task_form %}
+            <div class="{% if field.name == 'description' %}col-span-2{% endif %}">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ field.label }}</label>
+              {{ field }}
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="mt-3 bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+            Ajouter
+          </button>
+        </form>
+      </details>
+    </div>
+
+    <!-- Pièces utilisées -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Pièces utilisées</h3>
+      {% if order.parts_used.exists %}
+      <table class="w-full text-sm mb-4">
+        <thead>
+          <tr class="text-xs text-gray-400 border-b">
+            <th class="pb-2 text-left">Pièce</th>
+            <th class="pb-2 text-center">Qté</th>
+            <th class="pb-2 text-right">Prix u.</th>
+            <th class="pb-2 text-right">Total</th>
+            <th class="pb-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          {% for op in order.parts_used.all %}
+          <tr>
+            <td class="py-2">
+              <span class="font-semibold text-[#1A1A1A]">{{ op.part.name }}</span>
+              <span class="text-xs text-gray-400 ml-1">({{ op.part.reference }})</span>
+            </td>
+            <td class="py-2 text-center font-semibold">{{ op.quantity }}</td>
+            <td class="py-2 text-right text-gray-600">{{ op.unit_price }} FCFA</td>
+            <td class="py-2 text-right font-bold">{{ op.line_total }} FCFA</td>
+            <td class="py-2 text-right">
+              <form method="post" action="{% url 'part_remove' order.pk op.pk %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-red-400 hover:text-red-600 text-xs" onclick="return confirm('Retirer cette pièce ?')">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <details class="mt-2">
+        <summary class="text-sm text-[#7A5C00] cursor-pointer hover:text-[#5A4000] font-semibold">+ Ajouter une pièce</summary>
+        <form method="post" action="{% url 'part_add' order.pk %}" class="mt-3 border-t border-gray-100 pt-3">
+          {% csrf_token %}
+          <div class="grid grid-cols-2 gap-3">
+            {% for field in part_form %}
+            <div class="{% if field.name == 'part' %}col-span-2{% endif %}">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<p class="text-xs text-gray-400 mt-0.5">{{ field.help_text }}</p>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="mt-3 bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+            Ajouter
+          </button>
+        </form>
+      </details>
+    </div>
+  </div>
+</div>
+{% endblock %}

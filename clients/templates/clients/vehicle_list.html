@@ -1,0 +1,68 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Véhicules{% endblock %}
+{% block page_title %}Véhicules{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'vehicle_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouveau véhicule
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex gap-3">
+  <input type="text" name="q" value="{{ q }}" placeholder="Immatriculation, marque, modèle, VIN, client…"
+         class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Rechercher
+  </button>
+  {% if q %}
+  <a href="{% url 'vehicle_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Immatriculation</th>
+        <th class="px-4 py-3 text-left">Marque / Modèle</th>
+        <th class="px-4 py-3 text-left">Année</th>
+        <th class="px-4 py-3 text-left">Carburant</th>
+        <th class="px-4 py-3 text-left">Kilométrage</th>
+        <th class="px-4 py-3 text-left">Client</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for vehicle in vehicles %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3">
+          <a href="{% url 'vehicle_detail' vehicle.pk %}" class="text-[#7A5C00] hover:underline font-mono font-bold">
+            {{ vehicle.plate_number }}
+          </a>
+        </td>
+        <td class="px-4 py-3 font-medium">{{ vehicle.make }} {{ vehicle.model }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ vehicle.year|default:"—" }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ vehicle.get_fuel_type_display }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ vehicle.mileage|default:0 }} km</td>
+        <td class="px-4 py-3">
+          <a href="{% url 'client_detail' vehicle.client.pk %}" class="text-gray-600 hover:text-[#7A5C00]">
+            {{ vehicle.client.full_name }}
+          </a>
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'vehicle_update' vehicle.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+          {% if q %}Aucun véhicule trouvé pour "{{ q }}".{% else %}Aucun véhicule enregistré.{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ vehicles|length }} véhicule(s)</p>
+{% endblock %}

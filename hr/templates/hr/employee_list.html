@@ -1,0 +1,100 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Ressources Humaines{% endblock %}
+{% block page_title %}Ressources Humaines{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'employee_create' %}"
+     class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Ajouter un employé
+  </a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Masse salariale + action groupée -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Effectif actif</p>
+    <p class="text-3xl font-black text-[#1A1A1A]">{{ employees|length }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Masse salariale / mois</p>
+    <p class="text-3xl font-black text-[#7A5C00]">{{ total_payroll }} <span class="text-base font-semibold text-gray-400">FCFA</span></p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-2">Paie groupée (tous actifs)</p>
+    <form method="post" action="{% url 'payroll_bulk' %}">
+      {% csrf_token %}
+      <div class="flex gap-2">
+        <input type="month" name="month" required
+               class="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+        <button type="submit"
+                class="bg-[#FFCD11] text-[#1A1A1A] px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-[#E6B800] transition-colors whitespace-nowrap">
+          Générer paie
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Liste -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  {% if employees %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-xs text-gray-400 uppercase border-b bg-gray-50">
+        <th class="px-5 py-3 text-left">Nom</th>
+        <th class="px-5 py-3 text-left">Poste</th>
+        <th class="px-5 py-3 text-left">Type</th>
+        <th class="px-5 py-3 text-left">Entrée</th>
+        <th class="px-5 py-3 text-right">Salaire/mois</th>
+        <th class="px-5 py-3 text-center">Statut</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for emp in employees %}
+      <tr class="hover:bg-gray-50 transition-colors">
+        <td class="px-5 py-3">
+          <a href="{% url 'employee_detail' emp.pk %}" class="font-semibold text-[#1A1A1A] hover:text-[#7A5C00]">
+            {{ emp.full_name }}
+          </a>
+          {% if emp.phone %}<p class="text-xs text-gray-400">{{ emp.phone }}</p>{% endif %}
+        </td>
+        <td class="px-5 py-3 text-gray-600">{{ emp.post }}</td>
+        <td class="px-5 py-3">
+          {% if emp.employee_type == 'stagiaire' %}
+            <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">Stagiaire</span>
+          {% else %}
+            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">Employé</span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 text-gray-500 text-xs">{{ emp.start_date|date:"d/m/Y" }}</td>
+        <td class="px-5 py-3 text-right font-bold text-[#1A1A1A]">{{ emp.monthly_pay }} FCFA</td>
+        <td class="px-5 py-3 text-center">
+          {% if emp.is_active %}
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Actif</span>
+          {% else %}
+            <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">Inactif</span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 text-right">
+          <a href="{% url 'employee_detail' emp.pk %}" class="text-[#7A5C00] text-xs font-semibold hover:underline mr-3">Voir</a>
+          <a href="{% url 'employee_update' emp.pk %}" class="text-gray-400 text-xs hover:text-gray-700 mr-3">Modifier</a>
+          <a href="{% url 'employee_delete' emp.pk %}" class="text-red-400 text-xs hover:text-red-600">Supprimer</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="p-12 text-center text-gray-400">
+    <p class="text-lg font-semibold mb-1">Aucun employé enregistré</p>
+    <p class="text-sm mb-4">Commencez par ajouter un employé ou stagiaire.</p>
+    <a href="{% url 'employee_create' %}" class="inline-block bg-[#FFCD11] text-[#1A1A1A] px-5 py-2 rounded-lg font-bold text-sm hover:bg-[#E6B800] transition-colors">
+      + Ajouter un employé
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
