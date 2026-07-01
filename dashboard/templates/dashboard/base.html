@@ -180,6 +180,25 @@
         </svg>
         Gérer les garages
       </a>
+      <a href="{% url 'audit_log' %}"
+         class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
+                {% if n == 'audit_log' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        Journal d'activité
+      </a>
+      {% endif %}
+      {% if user.is_garage_admin %}
+      <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">Audit</div>
+      <a href="{% url 'audit_log' %}"
+         class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
+                {% if n == 'audit_log' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        Journal d'activité
+      </a>
       {% endif %}
 
       {% if user.is_garage_admin or user.is_superuser %}

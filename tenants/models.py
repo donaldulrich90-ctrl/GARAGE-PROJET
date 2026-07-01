@@ -33,6 +33,23 @@ class Garage(TimeStampedModel):
         help_text="Logo affiché dans l'interface du garage.",
     )
 
+    ifu = models.CharField("IFU", max_length=50, blank=True, help_text="Identifiant Fiscal Unique")
+    rccm = models.CharField("RCCM", max_length=50, blank=True, help_text="Registre du Commerce et du Crédit Mobilier")
+    signature = models.ImageField(
+        "Signature",
+        upload_to="garages/signatures/",
+        null=True,
+        blank=True,
+        help_text="Image de la signature (PNG transparent recommandé).",
+    )
+    cachet = models.ImageField(
+        "Cachet / Tampon",
+        upload_to="garages/cachets/",
+        null=True,
+        blank=True,
+        help_text="Image du cachet ou tampon officiel.",
+    )
+
     # Levier commercial : lien direct avec FAEST comme fournisseur intégré
     faest_supplier_enabled = models.BooleanField(
         "Approvisionnement FAEST activé",

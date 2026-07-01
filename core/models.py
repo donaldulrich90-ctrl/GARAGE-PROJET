@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 
@@ -55,3 +56,45 @@ class TimeStampedModel(models.Model):
 def gen_reference(prefix: str) -> str:
     """Genere une reference courte et unique (ex: OR-3F2A9C1B)."""
     return f"{prefix}-{uuid.uuid4().hex[:8].upper()}"
+
+
+class AuditLog(models.Model):
+    ACTION_CREATE = "create"
+    ACTION_UPDATE = "update"
+    ACTION_DELETE = "delete"
+    ACTION_CHOICES = [
+        (ACTION_CREATE, "Création"),
+        (ACTION_UPDATE, "Modification"),
+        (ACTION_DELETE, "Suppression"),
+    ]
+
+    garage = models.ForeignKey(
+        "tenants.Garage",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_logs",
+        verbose_name="Garage",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="audit_logs",
+        verbose_name="Utilisateur",
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, verbose_name="Action")
+    model_name = models.CharField(max_length=100, verbose_name="Modèle")
+    object_id = models.CharField(max_length=50, blank=True, verbose_name="ID objet")
+    object_repr = models.CharField(max_length=500, verbose_name="Représentation")
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Adresse IP")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Entrée journal"
+        verbose_name_plural = "Journal d'activité"
+
+    def __str__(self):
+        return f"{self.action} {self.model_name} #{self.object_id} par {self.user}"

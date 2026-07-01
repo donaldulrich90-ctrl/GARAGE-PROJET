@@ -17,7 +17,7 @@ STAFF_ROLE_CHOICES = [
 class GarageSettingsForm(forms.ModelForm):
     class Meta:
         model = Garage
-        fields = ("name", "city", "address", "phone", "whatsapp_number", "email", "logo")
+        fields = ("name", "city", "address", "phone", "whatsapp_number", "email", "ifu", "rccm", "logo", "signature", "cachet")
         widgets = {
             "name": forms.TextInput(attrs={"class": _INPUT}),
             "city": forms.TextInput(attrs={"class": _INPUT}),
@@ -25,6 +25,8 @@ class GarageSettingsForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": _INPUT}),
             "whatsapp_number": forms.TextInput(attrs={"class": _INPUT}),
             "email": forms.EmailInput(attrs={"class": _INPUT}),
+            "ifu": forms.TextInput(attrs={"class": _INPUT}),
+            "rccm": forms.TextInput(attrs={"class": _INPUT}),
         }
 
 

@@ -48,12 +48,42 @@
           <label class="block text-sm font-semibold text-gray-700 mb-1">Fin de période d'essai</label>
           {{ form.trial_ends_at }}
         </div>
+        {% if form.ifu %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">IFU</label>
+          {{ form.ifu }}
+        </div>
+        {% endif %}
+        {% if form.rccm %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">RCCM</label>
+          {{ form.rccm }}
+        </div>
+        {% endif %}
         {% if form.logo %}
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-1">Logo</label>
           {{ form.logo }}
           {% if garage.logo %}
           <img src="{{ garage.logo.url }}" class="h-12 mt-2 rounded" alt="Logo actuel">
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if form.signature %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Signature</label>
+          {{ form.signature }}
+          {% if garage.signature %}
+          <img src="{{ garage.signature.url }}" class="h-10 mt-2" alt="Signature actuelle">
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if form.cachet %}
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Cachet / Tampon</label>
+          {{ form.cachet }}
+          {% if garage.cachet %}
+          <img src="{{ garage.cachet.url }}" class="h-10 mt-2" alt="Cachet actuel">
           {% endif %}
         </div>
         {% endif %}

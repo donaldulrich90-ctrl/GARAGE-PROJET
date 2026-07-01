@@ -1,0 +1,101 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Journal d'activité{% endblock %}
+{% block page_title %}Journal d'activité{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex flex-wrap gap-3">
+  {% if garages %}
+  <select name="garage" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Tous les garages</option>
+    {% for g in garages %}
+    <option value="{{ g.pk }}" {% if garage_filter == g.pk|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+
+  <select name="action" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Toutes les actions</option>
+    {% for val, label in action_choices %}
+    <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <input type="text" name="model" value="{{ model_filter }}" placeholder="Modèle (ex: Client)"
+         class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-40">
+
+  <button type="submit"
+          class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#2A2A2A]">
+    Filtrer
+  </button>
+  {% if action_filter or model_filter or garage_filter %}
+  <a href="{% url 'audit_log' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕ Réinitialiser</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Utilisateur</th>
+        {% if garages %}<th class="px-4 py-3 text-left">Garage</th>{% endif %}
+        <th class="px-4 py-3 text-left">Action</th>
+        <th class="px-4 py-3 text-left">Modèle</th>
+        <th class="px-4 py-3 text-left">Objet</th>
+        <th class="px-4 py-3 text-left">IP</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for entry in page_obj %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-2.5 text-xs text-gray-400 whitespace-nowrap font-mono">
+          {{ entry.created_at|date:"d/m/Y H:i" }}
+        </td>
+        <td class="px-4 py-2.5 font-semibold text-[#1A1A1A] text-xs">
+          {{ entry.user|default:"—" }}
+        </td>
+        {% if garages %}
+        <td class="px-4 py-2.5 text-xs text-gray-600">
+          {{ entry.garage|default:"Plateforme" }}
+        </td>
+        {% endif %}
+        <td class="px-4 py-2.5">
+          {% if entry.action == 'create' %}
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">Création</span>
+          {% elif entry.action == 'update' %}
+            <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-semibold">Modification</span>
+          {% else %}
+            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">Suppression</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2.5 text-xs text-gray-500 font-mono">{{ entry.model_name }}</td>
+        <td class="px-4 py-2.5 text-xs text-gray-700 max-w-xs truncate" title="{{ entry.object_repr }}">
+          {{ entry.object_repr }}
+        </td>
+        <td class="px-4 py-2.5 text-xs text-gray-400 font-mono">{{ entry.ip_address|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="px-4 py-10 text-center text-gray-400">Aucune entrée.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-4 flex items-center gap-2 text-sm">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&action={{ action_filter }}&model={{ model_filter }}&garage={{ garage_filter }}"
+     class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">← Préc.</a>
+  {% endif %}
+  <span class="text-gray-400">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&action={{ action_filter }}&model={{ model_filter }}&garage={{ garage_filter }}"
+     class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Suiv. →</a>
+  {% endif %}
+</div>
+{% endif %}
+<p class="mt-2 text-xs text-gray-400">{{ page_obj.paginator.count }} entrée(s) au total</p>
+{% endblock %}

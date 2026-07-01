@@ -31,20 +31,27 @@ def garage_create(request):
     if guard:
         return guard
     if request.method == "POST":
-        form = GarageCreateForm(request.POST)
+        form = GarageCreateForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
-            garage = Garage.objects.create(
+            garage = Garage(
                 name=cd["name"],
                 city=cd.get("city", ""),
                 phone=cd.get("phone", ""),
                 whatsapp_number=cd.get("whatsapp_number", ""),
                 email=cd.get("email", ""),
                 address=cd.get("address", ""),
+                ifu=cd.get("ifu", ""),
+                rccm=cd.get("rccm", ""),
                 plan=cd["plan"],
                 trial_ends_at=cd.get("trial_ends_at"),
                 faest_supplier_enabled=cd.get("faest_supplier_enabled", False),
             )
+            if cd.get("signature"):
+                garage.signature = cd["signature"]
+            if cd.get("cachet"):
+                garage.cachet = cd["cachet"]
+            garage.save()
             User.objects.create_user(
                 username=cd["admin_username"],
                 first_name=cd.get("admin_first_name", ""),

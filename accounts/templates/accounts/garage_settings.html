@@ -52,6 +52,16 @@
           {{ form.address }}
         </div>
 
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">IFU</label>
+          {{ form.ifu }}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">RCCM</label>
+          {{ form.rccm }}
+        </div>
+
         <div class="sm:col-span-2">
           <label class="block text-sm font-semibold text-gray-700 mb-1">Logo (PNG ou JPG)</label>
           <input type="file" name="logo" accept="image/*"
@@ -60,6 +70,30 @@
                         file:text-sm file:font-semibold file:bg-[#FFFBE0] file:text-[#7A5C00]
                         hover:file:bg-[#FFCD11] hover:file:text-[#1A1A1A]">
           {% if form.logo.errors %}<p class="text-red-600 text-xs mt-1">{{ form.logo.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Signature</label>
+          {% if garage.signature %}
+          <img src="{{ garage.signature.url }}" alt="Signature actuelle" class="h-12 mb-2 border border-gray-200 rounded p-1">
+          {% endif %}
+          <input type="file" name="signature" accept="image/*"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600
+                        file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0
+                        file:text-sm file:font-semibold file:bg-[#FFFBE0] file:text-[#7A5C00]
+                        hover:file:bg-[#FFCD11] hover:file:text-[#1A1A1A]">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Cachet / Tampon</label>
+          {% if garage.cachet %}
+          <img src="{{ garage.cachet.url }}" alt="Cachet actuel" class="h-12 mb-2 border border-gray-200 rounded p-1">
+          {% endif %}
+          <input type="file" name="cachet" accept="image/*"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600
+                        file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0
+                        file:text-sm file:font-semibold file:bg-[#FFFBE0] file:text-[#7A5C00]
+                        hover:file:bg-[#FFCD11] hover:file:text-[#1A1A1A]">
         </div>
 
       </div>

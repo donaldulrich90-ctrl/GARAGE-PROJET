@@ -19,6 +19,10 @@ class GarageCreateForm(forms.Form):
         required=False, label="Fin de période d'essai",
         widget=forms.DateInput(attrs={"class": _INPUT, "type": "date"}),
     )
+    ifu = forms.CharField(max_length=50, required=False, label="IFU", widget=forms.TextInput(attrs={"class": _INPUT}))
+    rccm = forms.CharField(max_length=50, required=False, label="RCCM", widget=forms.TextInput(attrs={"class": _INPUT}))
+    signature = forms.ImageField(required=False, label="Signature")
+    cachet = forms.ImageField(required=False, label="Cachet / Tampon")
     faest_supplier_enabled = forms.BooleanField(required=False, label="Approvisionnement FAEST activé")
 
     # Compte administrateur du garage
@@ -43,7 +47,9 @@ class GarageEditForm(forms.ModelForm):
         model = Garage
         fields = (
             "name", "city", "address", "phone", "whatsapp_number", "email",
-            "plan", "is_active", "trial_ends_at", "faest_supplier_enabled", "logo",
+            "ifu", "rccm",
+            "plan", "is_active", "trial_ends_at", "faest_supplier_enabled",
+            "logo", "signature", "cachet",
         )
         widgets = {
             "name": forms.TextInput(attrs={"class": _INPUT}),
@@ -52,6 +58,8 @@ class GarageEditForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": _INPUT}),
             "whatsapp_number": forms.TextInput(attrs={"class": _INPUT}),
             "email": forms.EmailInput(attrs={"class": _INPUT}),
+            "ifu": forms.TextInput(attrs={"class": _INPUT}),
+            "rccm": forms.TextInput(attrs={"class": _INPUT}),
             "plan": forms.Select(attrs={"class": _SELECT}),
             "trial_ends_at": forms.DateInput(attrs={"class": _INPUT, "type": "date"}),
         }
