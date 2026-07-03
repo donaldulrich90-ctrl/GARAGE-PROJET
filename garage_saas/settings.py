@@ -91,8 +91,12 @@ WSGI_APPLICATION = 'garage_saas.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'garage_saas',
+        'USER': 'donald',
+        'PASSWORD': 'VUbIaTyp7PhDFmUttZukyeIjvFtoeScNmNEeLeMgdr7qLoOP1zKvUElyny3PGLRg',
+        'HOST': 'j79xd3zy0rm4is01vfn818bq',
+        'PORT': '5432',
     }
 }
 
@@ -141,4 +145,5 @@ LOGIN_REDIRECT_URL = 'dashboard_home'
 LOGOUT_REDIRECT_URL = 'login'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
