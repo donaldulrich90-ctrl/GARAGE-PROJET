@@ -30,6 +30,7 @@
         <th class="px-4 py-3 text-left">Carburant</th>
         <th class="px-4 py-3 text-left">Kilométrage</th>
         <th class="px-4 py-3 text-left">Client</th>
+        <th class="px-4 py-3 text-left" title="Visite Technique / Assurance">VT / Ass.</th>
         <th class="px-4 py-3"></th>
       </tr>
     </thead>
@@ -50,13 +51,35 @@
             {{ vehicle.client.full_name }}
           </a>
         </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-1.5">
+            {% if vehicle.vt_color == 'green' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-green-500" title="Visite technique valide"></span>
+            {% elif vehicle.vt_color == 'orange' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-orange-400" title="Visite technique expire bientôt"></span>
+            {% elif vehicle.vt_color == 'red' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500" title="Visite technique expirée"></span>
+            {% else %}
+              <span class="w-2.5 h-2.5 rounded-full bg-gray-200" title="Aucune visite technique"></span>
+            {% endif %}
+            {% if vehicle.ins_color == 'green' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-green-500" title="Assurance valide"></span>
+            {% elif vehicle.ins_color == 'orange' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-orange-400" title="Assurance expire bientôt"></span>
+            {% elif vehicle.ins_color == 'red' %}
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500" title="Assurance expirée"></span>
+            {% else %}
+              <span class="w-2.5 h-2.5 rounded-full bg-gray-200" title="Aucune assurance"></span>
+            {% endif %}
+          </div>
+        </td>
         <td class="px-4 py-3 text-right">
           <a href="{% url 'vehicle_update' vehicle.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
         </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
           {% if q %}Aucun véhicule trouvé pour "{{ q }}".{% else %}Aucun véhicule enregistré.{% endif %}
         </td>
       </tr>

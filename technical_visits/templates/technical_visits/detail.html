@@ -1,0 +1,122 @@
+{% extends "dashboard/base.html" %}
+{% block title %}VT — {{ visit.vehicle.plate_number }}{% endblock %}
+{% block page_title %}Visite technique — {{ visit.vehicle.plate_number }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'visit_update' visit.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+  <form method="post" action="{% url 'visit_delete' visit.pk %}" class="inline" onsubmit="return confirm('Supprimer cette visite technique ?');">
+    {% csrf_token %}
+    <button type="submit" class="bg-red-50 text-red-700 border border-red-200 text-sm px-4 py-2 rounded-lg hover:bg-red-100 transition-colors font-medium">
+      Supprimer
+    </button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'visit_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux visites</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Détails visite</h2>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Véhicule</dt>
+        <dd class="font-mono font-bold">
+          <a href="{% url 'vehicle_detail' visit.vehicle.pk %}" class="text-[#7A5C00] hover:underline">{{ visit.vehicle.plate_number }}</a>
+        </dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Propriétaire</dt>
+        <dd>{{ visit.vehicle.client.full_name }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Type</dt>
+        <dd>{{ visit.get_visit_type_display }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Date visite</dt>
+        <dd>{{ visit.visit_date|date:"d/m/Y" }}</dd>
+      </div>
+      <div class="flex justify-between items-center">
+        <dt class="text-gray-500">Expiration</dt>
+        <dd class="flex items-center gap-2">
+          {{ visit.expiry_date|date:"d/m/Y" }}
+          {% if visit.status_color == 'green' %}
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500" title="Valide"></span>
+          {% elif visit.status_color == 'orange' %}
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-400" title="Expire bientôt"></span>
+          {% else %}
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" title="Expiré"></span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Résultat</dt>
+        <dd>
+          {% if visit.result == 'passed' %}
+            <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">Admis</span>
+          {% elif visit.result == 'failed' %}
+            <span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full">Refusé</span>
+          {% else %}
+            <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full">Admis sous réserve</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Centre contrôle</dt>
+        <dd class="font-medium">{{ visit.inspection_center }}</dd>
+      </div>
+      {% if visit.certificate_number %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">N° certificat</dt>
+        <dd class="font-mono text-xs">{{ visit.certificate_number }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Coût</dt>
+        <dd class="font-bold">{{ visit.cost }} FCFA</dd>
+      </div>
+      {% if visit.document %}
+      <div class="pt-2 border-t border-gray-100">
+        <a href="{{ visit.document.url }}" target="_blank"
+           class="flex items-center gap-2 text-sm text-[#7A5C00] hover:underline">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Télécharger le PV
+        </a>
+      </div>
+      {% endif %}
+    </dl>
+  </div>
+
+  {% if visit.observations or visit.defects %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Observations &amp; Défauts</h2>
+    {% if visit.observations %}
+    <p class="text-sm text-gray-700 mb-4">{{ visit.observations }}</p>
+    {% endif %}
+    {% if visit.defects %}
+    <ul class="space-y-2">
+      {% for defect in visit.defects %}
+      <li class="flex items-start gap-2 text-sm">
+        {% if defect.gravite == 'critique' %}
+          <span class="mt-0.5 inline-block w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+        {% elif defect.gravite == 'majeur' %}
+          <span class="mt-0.5 inline-block w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></span>
+        {% else %}
+          <span class="mt-0.5 inline-block w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0"></span>
+        {% endif %}
+        <span>{{ defect.libelle|default:defect }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

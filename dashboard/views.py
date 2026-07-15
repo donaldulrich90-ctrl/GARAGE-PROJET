@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
@@ -24,6 +26,27 @@ def home(request):
 
     orders = RepairOrder.objects.for_garage(garage)
     parts = Part.objects.for_garage(garage)
+
+    today = date.today()
+    threshold = today + timedelta(days=30)
+
+    from technical_visits.models import TechnicalVisit
+    from insurance.models import Insurance
+
+    vt_expiring = TechnicalVisit.objects.for_garage(garage).filter(
+        expiry_date__gte=today, expiry_date__lte=threshold
+    ).count()
+    vt_expired = TechnicalVisit.objects.for_garage(garage).filter(
+        expiry_date__lt=today
+    ).count()
+
+    ins_expiring = Insurance.objects.for_garage(garage).filter(
+        end_date__gte=today, end_date__lte=threshold
+    ).count()
+    ins_expired = Insurance.objects.for_garage(garage).filter(
+        end_date__lt=today
+    ).count()
+
     context = {
         "is_platform_view": False,
         "garage": garage,
@@ -37,5 +60,9 @@ def home(request):
             status=Invoice.STATUS_PAID
         ),
         "recent_orders": orders[:10],
+        "vt_expiring": vt_expiring,
+        "vt_expired": vt_expired,
+        "ins_expiring": ins_expiring,
+        "ins_expired": ins_expired,
     }
     return render(request, "dashboard/home.html", context)

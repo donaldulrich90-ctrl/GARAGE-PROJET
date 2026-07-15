@@ -20,4 +20,7 @@ urlpatterns = [
     path("garages/", include("tenants.urls")),
     path("plateforme/", include("core.urls")),
     path("rapports/", include("dashboard.report_urls")),
+    path("messages/", include("messaging.urls")),
+    path("visites/", include("technical_visits.urls")),
+    path("assurances/", include("insurance.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

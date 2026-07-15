@@ -1,0 +1,85 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Assurances{% endblock %}
+{% block page_title %}Assurances{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'insurance_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvelle police
+  </a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex flex-wrap gap-3">
+  <select name="vehicle" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <option value="">Tous les véhicules</option>
+    {% for v in vehicles %}
+    <option value="{{ v.pk }}" {% if vehicle_filter == v.pk|stringformat:"s" %}selected{% endif %}>{{ v.plate_number }} — {{ v.client.full_name }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="company" value="{{ company_filter }}" placeholder="Compagnie..."
+         class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-44">
+  <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    <option value="">Tous statuts</option>
+    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+    <option value="expiring" {% if status_filter == 'expiring' %}selected{% endif %}>Expire dans 30j</option>
+    <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expirée</option>
+  </select>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Filtrer
+  </button>
+  {% if status_filter or vehicle_filter or company_filter %}
+  <a href="{% url 'insurance_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕ Réinitialiser</a>
+  {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Véhicule</th>
+        <th class="px-4 py-3 text-left">Compagnie</th>
+        <th class="px-4 py-3 text-left">N° Police</th>
+        <th class="px-4 py-3 text-left">Type</th>
+        <th class="px-4 py-3 text-left">Fin de validité</th>
+        <th class="px-4 py-3 text-left">Prime</th>
+        <th class="px-4 py-3 text-left">Statut</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for ins in insurances %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3">
+          <a href="{% url 'insurance_detail' ins.pk %}" class="text-[#7A5C00] hover:underline font-mono font-bold">
+            {{ ins.vehicle.plate_number }}
+          </a>
+          <div class="text-xs text-gray-400">{{ ins.vehicle.client.full_name }}</div>
+        </td>
+        <td class="px-4 py-3 font-medium">{{ ins.insurance_company }}</td>
+        <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ ins.policy_number }}</td>
+        <td class="px-4 py-3 text-gray-500 text-xs">{{ ins.get_insurance_type_display }}</td>
+        <td class="px-4 py-3 font-medium">{{ ins.end_date|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3 text-gray-600">{{ ins.premium_amount }} FCFA</td>
+        <td class="px-4 py-3">
+          {% if ins.status_color == 'green' %}
+            <span class="inline-flex items-center gap-1 text-xs text-green-700"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>Active</span>
+          {% elif ins.status_color == 'orange' %}
+            <span class="inline-flex items-center gap-1 text-xs text-orange-700"><span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>Expire bientôt</span>
+          {% else %}
+            <span class="inline-flex items-center gap-1 text-xs text-red-700"><span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>Expirée</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'insurance_update' ins.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-400">Aucune police d'assurance enregistrée.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ insurances|length }} police(s)</p>
+{% endblock %}

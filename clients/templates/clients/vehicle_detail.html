@@ -3,6 +3,12 @@
 {% block page_title %}{{ vehicle.plate_number }} — {{ vehicle.make }} {{ vehicle.model }}{% endblock %}
 
 {% block header_actions %}
+  <a href="{% url 'visit_create' %}?vehicle={{ vehicle.pk }}" class="border border-gray-300 text-gray-700 text-sm px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs">
+    + Visite technique
+  </a>
+  <a href="{% url 'insurance_create' %}?vehicle={{ vehicle.pk }}" class="border border-gray-300 text-gray-700 text-sm px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs">
+    + Assurance
+  </a>
   <a href="{% url 'vehicle_update' vehicle.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
     Modifier
   </a>
@@ -102,5 +108,109 @@
     <p class="text-sm text-gray-400">Aucun ordre de réparation pour ce véhicule.</p>
     {% endif %}
   </div>
+</div>
+
+<!-- Visites techniques -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Visites techniques
+      <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ technical_visits|length }}</span>
+    </h2>
+    <a href="{% url 'visit_create' %}?vehicle={{ vehicle.pk }}" class="text-xs text-[#7A5C00] hover:underline font-medium">+ Ajouter</a>
+  </div>
+  {% if technical_visits %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-400 uppercase border-b">
+          <th class="pb-2 text-left">Date visite</th>
+          <th class="pb-2 text-left">Type</th>
+          <th class="pb-2 text-left">Expiration</th>
+          <th class="pb-2 text-left">Résultat</th>
+          <th class="pb-2 text-left">Centre</th>
+          <th class="pb-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for vt in technical_visits %}
+        <tr class="border-b border-gray-50 last:border-0 hover:bg-[#FFFBE0] transition-colors">
+          <td class="py-2">{{ vt.visit_date|date:"d/m/Y" }}</td>
+          <td class="py-2 text-gray-500 text-xs">{{ vt.get_visit_type_display }}</td>
+          <td class="py-2">
+            <span class="flex items-center gap-1.5">
+              {{ vt.expiry_date|date:"d/m/Y" }}
+              {% if vt.status_color == 'green' %}
+                <span class="w-2 h-2 rounded-full bg-green-500 inline-block" title="Valide"></span>
+              {% elif vt.status_color == 'orange' %}
+                <span class="w-2 h-2 rounded-full bg-orange-400 inline-block" title="Expire bientôt"></span>
+              {% else %}
+                <span class="w-2 h-2 rounded-full bg-red-500 inline-block" title="Expiré"></span>
+              {% endif %}
+            </span>
+          </td>
+          <td class="py-2">
+            {% if vt.result == 'passed' %}
+              <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">Admis</span>
+            {% elif vt.result == 'failed' %}
+              <span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full">Refusé</span>
+            {% else %}
+              <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full">Sous réserve</span>
+            {% endif %}
+          </td>
+          <td class="py-2 text-gray-500 text-xs">{{ vt.inspection_center }}</td>
+          <td class="py-2 text-right">
+            <a href="{% url 'visit_detail' vt.pk %}" class="text-[#7A5C00] text-xs hover:underline">Voir</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Aucune visite technique enregistrée.</p>
+  {% endif %}
+</div>
+
+<!-- Assurances -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Assurances
+      <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ vehicle_insurances|length }}</span>
+    </h2>
+    <a href="{% url 'insurance_create' %}?vehicle={{ vehicle.pk }}" class="text-xs text-[#7A5C00] hover:underline font-medium">+ Ajouter</a>
+  </div>
+  {% if vehicle_insurances %}
+  <div class="space-y-3">
+    {% for ins in vehicle_insurances %}
+    <div class="border border-gray-100 rounded-lg p-4 hover:border-[#FFCD11] hover:bg-[#FFFBE0] transition-colors">
+      <div class="flex items-center justify-between">
+        <div>
+          <a href="{% url 'insurance_detail' ins.pk %}" class="font-bold text-[#7A5C00] hover:underline text-sm">{{ ins.insurance_company }}</a>
+          <span class="text-xs text-gray-400 ml-2 font-mono">{{ ins.policy_number }}</span>
+        </div>
+        {% if ins.status_color == 'green' %}
+          <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Active</span>
+        {% elif ins.status_color == 'orange' %}
+          <span class="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>Expire bientôt</span>
+        {% else %}
+          <span class="inline-flex items-center gap-1 text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded-full"><span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>Expirée</span>
+        {% endif %}
+      </div>
+      <p class="text-xs text-gray-500 mt-1">
+        {{ ins.get_insurance_type_display }} —
+        du {{ ins.start_date|date:"d/m/Y" }} au {{ ins.end_date|date:"d/m/Y" }} —
+        Prime : {{ ins.premium_amount }} FCFA
+      </p>
+      {% if ins.claims.all %}
+      <p class="text-xs text-gray-400 mt-1">{{ ins.claims.all|length }} sinistre(s)</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Aucune assurance enregistrée.</p>
+  {% endif %}
 </div>
 {% endblock %}

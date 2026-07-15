@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'expenses',
     'dashboard',
     'hr',
+    'messaging',
+    'technical_visits',
+    'insurance',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

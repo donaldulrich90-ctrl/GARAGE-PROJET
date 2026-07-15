@@ -1,0 +1,58 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Sinistres{% endblock %}
+{% block page_title %}Tous les sinistres{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'insurance_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux assurances</a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">N° déclaration</th>
+        <th class="px-4 py-3 text-left">Véhicule</th>
+        <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Type</th>
+        <th class="px-4 py-3 text-left">Coût estimé</th>
+        <th class="px-4 py-3 text-left">Statut</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for claim in claims %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3 font-mono font-bold">
+          <a href="{% url 'claim_detail' claim.pk %}" class="text-[#7A5C00] hover:underline">{{ claim.claim_number }}</a>
+        </td>
+        <td class="px-4 py-3">
+          <a href="{% url 'vehicle_detail' claim.insurance.vehicle.pk %}" class="text-[#7A5C00] hover:underline font-mono font-bold">{{ claim.insurance.vehicle.plate_number }}</a>
+        </td>
+        <td class="px-4 py-3 text-gray-600">{{ claim.claim_date|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3 text-gray-500">{{ claim.get_claim_type_display }}</td>
+        <td class="px-4 py-3 font-semibold">{{ claim.estimated_cost }} FCFA</td>
+        <td class="px-4 py-3">
+          <span class="text-xs px-2 py-0.5 rounded-full font-semibold
+            {% if claim.status == 'paid' %}bg-green-100 text-green-800
+            {% elif claim.status == 'rejected' %}bg-red-100 text-red-800
+            {% elif claim.status == 'approved' %}bg-blue-100 text-blue-800
+            {% elif claim.status == 'under_review' %}bg-purple-100 text-purple-800
+            {% else %}bg-gray-100 text-gray-700{% endif %}">
+            {{ claim.get_status_display }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'claim_update' claim.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="px-4 py-8 text-center text-gray-400">Aucun sinistre déclaré.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ claims|length }} sinistre(s)</p>
+{% endblock %}

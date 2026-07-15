@@ -1,0 +1,95 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Sinistre {{ claim.claim_number }}{% endblock %}
+{% block page_title %}Sinistre — {{ claim.claim_number }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'claim_update' claim.pk %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">Modifier</a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'insurance_detail' claim.insurance.pk %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour à la police</a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Détail du sinistre</h2>
+  <dl class="space-y-3 text-sm">
+    <div class="flex justify-between">
+      <dt class="text-gray-500">N° déclaration</dt>
+      <dd class="font-mono font-bold">{{ claim.claim_number }}</dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Véhicule</dt>
+      <dd>
+        <a href="{% url 'vehicle_detail' claim.insurance.vehicle.pk %}" class="text-[#7A5C00] hover:underline font-mono font-bold">{{ claim.insurance.vehicle.plate_number }}</a>
+      </dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Police</dt>
+      <dd>
+        <a href="{% url 'insurance_detail' claim.insurance.pk %}" class="text-[#7A5C00] hover:underline">{{ claim.insurance.policy_number }}</a>
+        — {{ claim.insurance.insurance_company }}
+      </dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Date sinistre</dt>
+      <dd>{{ claim.claim_date|date:"d/m/Y" }}</dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Type</dt>
+      <dd>{{ claim.get_claim_type_display }}</dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Statut</dt>
+      <dd>
+        <span class="text-xs px-2 py-0.5 rounded-full font-semibold
+          {% if claim.status == 'paid' %}bg-green-100 text-green-800
+          {% elif claim.status == 'rejected' %}bg-red-100 text-red-800
+          {% elif claim.status == 'approved' %}bg-blue-100 text-blue-800
+          {% elif claim.status == 'under_review' %}bg-purple-100 text-purple-800
+          {% else %}bg-gray-100 text-gray-700{% endif %}">
+          {{ claim.get_status_display }}
+        </span>
+      </dd>
+    </div>
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Coût estimé</dt>
+      <dd class="font-bold">{{ claim.estimated_cost }} FCFA</dd>
+    </div>
+    {% if claim.approved_amount is not None %}
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Montant approuvé</dt>
+      <dd class="font-bold text-green-700">{{ claim.approved_amount }} FCFA</dd>
+    </div>
+    {% endif %}
+    {% if claim.repair_order %}
+    <div class="flex justify-between">
+      <dt class="text-gray-500">Ordre de réparation</dt>
+      <dd>
+        <a href="{% url 'order_detail' claim.repair_order.pk %}" class="text-[#7A5C00] hover:underline font-mono">{{ claim.repair_order.reference }}</a>
+      </dd>
+    </div>
+    {% endif %}
+    <div class="pt-2 border-t border-gray-100">
+      <dt class="text-gray-500 mb-1">Description</dt>
+      <dd class="text-gray-700">{{ claim.description }}</dd>
+    </div>
+    {% if claim.notes %}
+    <div>
+      <dt class="text-gray-500 mb-1">Notes</dt>
+      <dd class="text-gray-600 text-xs">{{ claim.notes }}</dd>
+    </div>
+    {% endif %}
+    {% if claim.documents %}
+    <div class="pt-2 border-t border-gray-100">
+      <a href="{{ claim.documents.url }}" target="_blank" class="flex items-center gap-2 text-sm text-[#7A5C00] hover:underline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Télécharger les documents
+      </a>
+    </div>
+    {% endif %}
+  </dl>
+</div>
+{% endblock %}

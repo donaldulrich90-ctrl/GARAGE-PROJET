@@ -1,0 +1,78 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }} police assurance{% endblock %}
+{% block page_title %}{{ action }} une police d'assurance{% endblock %}
+
+{% block header_actions %}
+  {% if insurance %}
+  <a href="{% url 'insurance_detail' insurance.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">Annuler</a>
+  {% else %}
+  <a href="{% url 'insurance_list' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">Annuler</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="max-w-2xl">
+  {% csrf_token %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.vehicle.label }}</label>
+        {{ form.vehicle }}
+        {% if form.vehicle.errors %}<p class="text-red-500 text-xs mt-1">{{ form.vehicle.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.insurance_company.label }}</label>
+        {{ form.insurance_company }}
+        {% if form.insurance_company.errors %}<p class="text-red-500 text-xs mt-1">{{ form.insurance_company.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.policy_number.label }}</label>
+        {{ form.policy_number }}
+        {% if form.policy_number.errors %}<p class="text-red-500 text-xs mt-1">{{ form.policy_number.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.insurance_type.label }}</label>
+        {{ form.insurance_type }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.premium_amount.label }}</label>
+        {{ form.premium_amount }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.start_date.label }}</label>
+        {{ form.start_date }}
+        {% if form.start_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.start_date.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.end_date.label }}</label>
+        {{ form.end_date }}
+        {% if form.end_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.end_date.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.agent_name.label }}</label>
+        {{ form.agent_name }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.agent_phone.label }}</label>
+        {{ form.agent_phone }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.coverage_details.label }}</label>
+        {{ form.coverage_details }}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.document.label }}</label>
+        {{ form.document }}
+        {% if insurance and insurance.document %}
+        <p class="text-xs text-gray-400 mt-1">Fichier actuel : <a href="{{ insurance.document.url }}" class="text-[#7A5C00] underline" target="_blank">{{ insurance.document.name }}</a></p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] font-bold px-6 py-2 rounded-lg hover:bg-[#E6B800] transition-colors text-sm">
+        {{ action }}
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}

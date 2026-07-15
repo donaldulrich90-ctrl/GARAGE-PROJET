@@ -1,4 +1,7 @@
+from datetime import date, timedelta
+
 from django.contrib import messages
+from django.db.models import Case, CharField, OuterRef, Q, Subquery, Value, When
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
@@ -17,7 +20,9 @@ class ClientListView(GarageRequiredMixin, ListView):
         qs = super().get_queryset()
         q = self.request.GET.get('q', '').strip()
         if q:
-            qs = qs.filter(full_name__icontains=q) | qs.filter(phone__icontains=q) | qs.filter(email__icontains=q)
+            qs = qs.filter(
+                Q(full_name__icontains=q) | Q(phone__icontains=q) | Q(email__icontains=q)
+            )
         return qs.order_by('full_name')
 
     def get_context_data(self, **kwargs):
@@ -59,16 +64,49 @@ class VehicleListView(GarageRequiredMixin, ListView):
     context_object_name = 'vehicles'
 
     def get_queryset(self):
+        from technical_visits.models import TechnicalVisit
+        from insurance.models import Insurance
+
         qs = super().get_queryset().select_related('client')
         q = self.request.GET.get('q', '').strip()
         if q:
-            qs = (
-                qs.filter(plate_number__icontains=q)
-                | qs.filter(make__icontains=q)
-                | qs.filter(model__icontains=q)
-                | qs.filter(vin__icontains=q)
-                | qs.filter(client__full_name__icontains=q)
+            qs = qs.filter(
+                Q(plate_number__icontains=q) |
+                Q(make__icontains=q) |
+                Q(model__icontains=q) |
+                Q(vin__icontains=q) |
+                Q(client__full_name__icontains=q)
             )
+
+        today = date.today()
+        threshold = today + timedelta(days=30)
+
+        latest_vt = TechnicalVisit.objects.filter(
+            vehicle=OuterRef('pk'), garage=self.garage
+        ).order_by('-expiry_date').values('expiry_date')[:1]
+
+        latest_ins = Insurance.objects.filter(
+            vehicle=OuterRef('pk'), garage=self.garage
+        ).order_by('-end_date').values('end_date')[:1]
+
+        qs = qs.annotate(
+            latest_vt_expiry=Subquery(latest_vt),
+            latest_ins_end=Subquery(latest_ins),
+            vt_color=Case(
+                When(latest_vt_expiry__lt=today, then=Value('red')),
+                When(latest_vt_expiry__lte=threshold, then=Value('orange')),
+                When(latest_vt_expiry__isnull=False, then=Value('green')),
+                default=Value('none'),
+                output_field=CharField(),
+            ),
+            ins_color=Case(
+                When(latest_ins_end__lt=today, then=Value('red')),
+                When(latest_ins_end__lte=threshold, then=Value('orange')),
+                When(latest_ins_end__isnull=False, then=Value('green')),
+                default=Value('none'),
+                output_field=CharField(),
+            ),
+        )
         return qs
 
     def get_context_data(self, **kwargs):
@@ -85,6 +123,8 @@ class VehicleDetailView(GarageRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['repair_orders'] = self.object.repair_orders.select_related('assigned_mechanic').order_by('-received_at')
+        ctx['technical_visits'] = self.object.technical_visits.all()
+        ctx['vehicle_insurances'] = self.object.insurances.select_related().prefetch_related('claims').all()
         return ctx
 
 
