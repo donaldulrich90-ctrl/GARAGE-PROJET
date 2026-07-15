@@ -1,0 +1,88 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }} taxe{% endblock %}
+{% block page_title %}{{ action }} une taxe{% endblock %}
+
+{% block header_actions %}
+  {% if tax %}
+  <a href="{% url 'taxes:tax_detail' tax.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Annuler
+  </a>
+  {% else %}
+  <a href="{% url 'taxes:tax_list' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Annuler
+  </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="max-w-2xl">
+  {% csrf_token %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.vehicle.label }}</label>
+        {{ form.vehicle }}
+        {% if form.vehicle.errors %}<p class="text-red-500 text-xs mt-1">{{ form.vehicle.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.tax_type.label }}</label>
+        {{ form.tax_type }}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.fiscal_year.label }}</label>
+        {{ form.fiscal_year }}
+        {% if form.fiscal_year.errors %}<p class="text-red-500 text-xs mt-1">{{ form.fiscal_year.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.description.label }}</label>
+        {{ form.description }}
+        <p class="text-xs text-gray-400 mt-0.5">Préciser si le type est "Autre"</p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.amount.label }}</label>
+        {{ form.amount }}
+        {% if form.amount.errors %}<p class="text-red-500 text-xs mt-1">{{ form.amount.errors.0 }}</p>{% endif %}
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.due_date.label }}</label>
+        {{ form.due_date }}
+        {% if form.due_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.due_date.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="md:col-span-2 border-t border-gray-100 pt-4">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Paiement</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex items-center gap-3">
+            {{ form.is_paid }}
+            <label class="text-sm font-medium text-gray-700">{{ form.is_paid.label }}</label>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.payment_date.label }}</label>
+            {{ form.payment_date }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.receipt_number.label }}</label>
+            {{ form.receipt_number }}
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.document.label }}</label>
+            {{ form.document }}
+            {% if tax and tax.document %}
+            <p class="text-xs text-gray-400 mt-1">Fichier actuel : <a href="{{ tax.document.url }}" class="text-[#7A5C00] underline" target="_blank">{{ tax.document.name }}</a></p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.notes.label }}</label>
+        {{ form.notes }}
+      </div>
+    </div>
+
+    <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] font-bold px-6 py-2 rounded-lg hover:bg-[#E6B800] transition-colors text-sm">
+        {{ action }}
+      </button>
+    </div>
+  </div>
+</form>
+{% endblock %}

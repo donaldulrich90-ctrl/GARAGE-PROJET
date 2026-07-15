@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'messaging',
     'technical_visits',
     'insurance',
+    'taxes',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

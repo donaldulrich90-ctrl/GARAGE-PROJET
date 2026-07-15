@@ -23,4 +23,5 @@ urlpatterns = [
     path("messages/", include("messaging.urls")),
     path("visites/", include("technical_visits.urls")),
     path("assurances/", include("insurance.urls")),
+    path("taxes/", include("taxes.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
