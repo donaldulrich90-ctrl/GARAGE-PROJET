@@ -87,7 +87,7 @@ def tax_create(request):
             tax.garage = garage
             tax.save()
             messages.success(request, 'Taxe enregistrée.')
-            return redirect('tax_detail', pk=tax.pk)
+            return redirect('taxes:tax_detail', pk=tax.pk)
     else:
         form = VehicleTaxForm(initial=initial, garage=garage)
 
@@ -106,7 +106,7 @@ def tax_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Taxe mise à jour.')
-            return redirect('tax_detail', pk=tax.pk)
+            return redirect('taxes:tax_detail', pk=tax.pk)
     else:
         form = VehicleTaxForm(instance=tax, garage=garage)
 
@@ -122,7 +122,7 @@ def tax_delete(request, pk):
     if request.method == 'POST':
         tax.delete()
         messages.success(request, 'Taxe supprimée.')
-        return redirect('tax_list')
+        return redirect('taxes:tax_list')
     return render(request, 'taxes/confirm_delete.html', {'tax': tax})
 
 
@@ -137,4 +137,4 @@ def tax_mark_paid(request, pk):
     tax.payment_date = date.today()
     tax.save(update_fields=['is_paid', 'payment_date'])
     messages.success(request, 'Taxe marquée comme payée.')
-    return redirect('tax_detail', pk=tax.pk)
+    return redirect('taxes:tax_detail', pk=tax.pk)
