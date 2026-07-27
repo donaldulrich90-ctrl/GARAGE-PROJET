@@ -1,80 +1,158 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Caisse — Factures{% endblock %}
-{% block page_title %}Caisse / Factures{% endblock %}
+{% block title %}Caisse{% endblock %}
+{% block page_title %}Caisse — Encaissements{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'proforma_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvelle vente
+  </a>
+{% endblock %}
 
 {% block content %}
-<form method="get" class="mb-4 flex gap-3">
-  <input type="text" name="q" value="{{ q }}" placeholder="Référence, immatriculation, client…"
-         class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
-  <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-    <option value="">Tous les statuts</option>
-    {% for val, label in status_choices %}
-    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+
+{# ── KPIs ─────────────────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+  <div class="bg-[#1A1A1A] rounded-xl p-4 text-white">
+    <p class="text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold mb-1">Total encaissé</p>
+    <p class="text-2xl font-black text-[#FFCD11]">{{ kpis.total|floatformat:0 }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">FCFA — {{ kpis.count }} encaissement{{ kpis.count|pluralize }}</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 border border-gray-200">
+    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Panier moyen</p>
+    <p class="text-2xl font-black text-[#1A1A1A]">{{ kpis.avg|floatformat:0 }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">FCFA / encaissement</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 border border-gray-200">
+    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Aujourd'hui</p>
+    <p class="text-2xl font-black text-[#1A1A1A]">{{ kpis.today_total|floatformat:0 }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">FCFA encaissés</p>
+  </div>
+
+  <div class="bg-white rounded-xl p-4 border border-gray-200">
+    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Ce mois-ci</p>
+    <p class="text-2xl font-black text-[#1A1A1A]">{{ kpis.month_total|floatformat:0 }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">FCFA encaissés</p>
+  </div>
+
+</div>
+
+{# ── Répartition par méthode ─────────────────────────────────────────────── #}
+{% if kpis.by_method %}
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+  <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Répartition par méthode de paiement</h2>
+  <div class="space-y-3">
+    {% for method, data in kpis.by_method.items %}
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-semibold text-gray-700">{{ data.label }}</span>
+        <span class="text-sm font-black text-[#1A1A1A]">{{ data.amount|floatformat:0 }} FCFA
+          <span class="text-xs text-gray-400 font-normal ml-1">({{ data.pct }}%)</span>
+        </span>
+      </div>
+      <div class="w-full bg-gray-100 rounded-full h-2.5">
+        <div class="bg-[#FFCD11] h-2.5 rounded-full transition-all" style="width:{{ data.pct }}%"></div>
+      </div>
+    </div>
     {% endfor %}
-  </select>
+  </div>
+</div>
+{% endif %}
+
+{# ── Filtres ─────────────────────────────────────────────────────────────── #}
+<form method="get" class="mb-4 flex flex-wrap gap-2 items-end">
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Période</label>
+    <div class="flex gap-1">
+      <a href="?period=today{% if method_filter %}&method={{ method_filter }}{% endif %}"
+         class="px-3 py-2 rounded-lg text-xs font-semibold border {% if period == 'today' %}bg-[#1A1A1A] text-[#FFCD11] border-[#1A1A1A]{% else %}border-gray-300 text-gray-600 hover:bg-gray-50{% endif %}">
+        Aujourd'hui
+      </a>
+      <a href="?period=month{% if method_filter %}&method={{ method_filter }}{% endif %}"
+         class="px-3 py-2 rounded-lg text-xs font-semibold border {% if period == 'month' %}bg-[#1A1A1A] text-[#FFCD11] border-[#1A1A1A]{% else %}border-gray-300 text-gray-600 hover:bg-gray-50{% endif %}">
+        Ce mois
+      </a>
+    </div>
+  </div>
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Du</label>
+    <input type="date" name="date_from" value="{{ date_from }}"
+           class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+  </div>
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Au</label>
+    <input type="date" name="date_to" value="{{ date_to }}"
+           class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+  </div>
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Méthode</label>
+    <select name="method" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+      <option value="">Toutes</option>
+      {% for val, label in method_choices %}
+      <option value="{{ val }}" {% if method_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
   <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
     Filtrer
   </button>
-  {% if q or status_filter %}
-  <a href="{% url 'invoice_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕</a>
+  {% if period or date_from or date_to or method_filter %}
+  <a href="{% url 'invoice_list' %}" class="text-sm text-gray-500 px-3 py-2 hover:text-gray-700">✕ Réinitialiser</a>
   {% endif %}
 </form>
 
+{# ── Liste des encaissements ─────────────────────────────────────────────── #}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
-        <th class="px-4 py-3 text-left">Référence</th>
-        <th class="px-4 py-3 text-left">OR</th>
-        <th class="px-4 py-3 text-left">Véhicule</th>
-        <th class="px-4 py-3 text-left">Client</th>
-        <th class="px-4 py-3 text-right">Total</th>
-        <th class="px-4 py-3 text-right">Payé</th>
-        <th class="px-4 py-3 text-right">Solde dû</th>
-        <th class="px-4 py-3 text-left">Statut</th>
         <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Référence</th>
+        <th class="px-4 py-3 text-left">Client</th>
+        <th class="px-4 py-3 text-right">Montant</th>
+        <th class="px-4 py-3 text-left">Méthode</th>
+        <th class="px-4 py-3 text-left">Source</th>
         <th class="px-4 py-3"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-50">
-      {% for invoice in invoices %}
+      {% for e in entries %}
       <tr class="hover:bg-[#FFFBE0] transition-colors">
-        <td class="px-4 py-3 font-mono font-bold">
-          <a href="{% url 'invoice_detail' invoice.pk %}" class="text-[#7A5C00] hover:underline">{{ invoice.reference }}</a>
-        </td>
+        <td class="px-4 py-3 text-gray-400 text-xs">{{ e.date|date:"d/m/Y H:i" }}</td>
+        <td class="px-4 py-3 font-mono font-bold text-[#7A5C00]">{{ e.reference }}</td>
+        <td class="px-4 py-3 text-gray-700">{{ e.client }}</td>
+        <td class="px-4 py-3 text-right font-black text-[#1A1A1A]">{{ e.amount|floatformat:0 }} FCFA</td>
         <td class="px-4 py-3">
-          <a href="{% url 'order_detail' invoice.repair_order.pk %}" class="text-gray-500 hover:text-[#7A5C00] text-xs font-medium">
-            {{ invoice.repair_order.reference }}
-          </a>
-        </td>
-        <td class="px-4 py-3 font-mono text-gray-700 text-xs font-semibold">{{ invoice.repair_order.vehicle.plate_number }}</td>
-        <td class="px-4 py-3 text-gray-600">{{ invoice.repair_order.client.full_name }}</td>
-        <td class="px-4 py-3 text-right font-bold text-[#1A1A1A]">{{ invoice.total }} FCFA</td>
-        <td class="px-4 py-3 text-right text-green-700 font-semibold">{{ invoice.amount_paid }} FCFA</td>
-        <td class="px-4 py-3 text-right {% if invoice.balance_due > 0 %}text-red-600 font-black{% else %}text-green-600 font-semibold{% endif %}">
-          {{ invoice.balance_due }} FCFA
-        </td>
-        <td class="px-4 py-3">
-          {% if invoice.status == 'paid' %}
-            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">Payée</span>
-          {% elif invoice.status == 'partial' %}
-            <span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-semibold">Partielle</span>
+          {% if e.method == 'cash' %}
+            <span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">Espèces</span>
+          {% elif e.method == 'mobile_money' %}
+            <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-semibold">Mobile Money</span>
+          {% elif e.method == 'bank_transfer' %}
+            <span class="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-semibold">Virement</span>
           {% else %}
-            <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">Non payée</span>
+            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{{ e.method_label }}</span>
           {% endif %}
         </td>
-        <td class="px-4 py-3 text-gray-400 text-xs">{{ invoice.issued_at|date:"d/m/Y" }}</td>
+        <td class="px-4 py-3">
+          {% if e.source == 'vente' %}
+            <span class="text-xs text-[#7A5C00] bg-[#FFFBE0] px-2 py-0.5 rounded-full font-semibold">Vente directe</span>
+          {% else %}
+            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Facture OR</span>
+          {% endif %}
+        </td>
         <td class="px-4 py-3 text-right">
-          <a href="{% url 'invoice_detail' invoice.pk %}" class="text-[#7A5C00] hover:underline text-xs font-bold">Encaisser →</a>
+          <a href="{{ e.url_detail }}" class="text-[#7A5C00] hover:underline text-xs font-bold">Voir →</a>
         </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="10" class="px-4 py-8 text-center text-gray-400">Aucune facture.</td>
+        <td colspan="7" class="px-4 py-10 text-center text-gray-400">Aucun encaissement pour cette période.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-<p class="mt-2 text-xs text-gray-400">{{ invoices|length }} facture(s)</p>
+<p class="mt-2 text-xs text-gray-400">{{ entries|length }} encaissement{{ entries|length|pluralize }}</p>
 {% endblock %}

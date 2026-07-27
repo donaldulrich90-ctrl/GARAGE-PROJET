@@ -26,10 +26,14 @@ class ClientForm(forms.ModelForm):
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = ['client', 'plate_number', 'make', 'model', 'year', 'fuel_type', 'vin', 'mileage', 'color', 'notes']
+        fields = [
+            'client', 'plate_number', 'make', 'model', 'year', 'fuel_type',
+            'vin', 'mileage', 'color', 'key_tag', 'is_in_garage', 'stored_since', 'notes',
+        ]
         widgets = {
             'notes': forms.Textarea(attrs={'rows': 3}),
             'year': forms.NumberInput(attrs={'min': 1970, 'max': 2030}),
+            'stored_since': forms.DateInput(attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, garage=None, **kwargs):

@@ -8,7 +8,7 @@
 </div>
 
 <div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-  <form method="post" novalidate>
+  <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     <div class="grid grid-cols-2 gap-4">
       {% for field in form %}
@@ -25,6 +25,14 @@
       </div>
       {% endfor %}
     </div>
+    <!-- Photos d'état -->
+    <div class="col-span-2 mb-2">
+      <label class="block text-sm font-semibold text-gray-700 mb-1">Photos d'état</label>
+      <input type="file" name="photos" multiple accept="image/*"
+             class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#FFCD11] file:text-[#1A1A1A] hover:file:bg-[#E6B800] cursor-pointer border border-gray-300 rounded-lg px-3 py-2">
+      <p class="text-xs text-gray-400 mt-1">Sélectionner plusieurs photos à la fois (optionnel).</p>
+    </div>
+
     <div class="flex gap-3 pt-4 border-t border-gray-100 mt-4">
       <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#E6B800] transition-colors">
         Enregistrer

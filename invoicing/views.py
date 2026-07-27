@@ -1,9 +1,13 @@
 import json
+from datetime import date, timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
@@ -12,6 +16,151 @@ from inventory.models import Part, StockMovement
 
 from .forms import PaymentForm, ProformaForm, ProformaLineFormSet
 from .models import Invoice, Payment, ProformaInvoice
+
+
+# ─── Caisse unifiée ─────────────────────────────────────────────────────────
+
+def _build_cashbook(garage, date_from=None, date_to=None, method_filter=""):
+    """
+    Agrège les encaissements de deux sources :
+      1. ProformaInvoice au statut receipt
+      2. Payment des Invoice liées aux OR
+    Retourne une liste de dicts normalisés, triée par date décroissante.
+    """
+    entries = []
+
+    # Source 1 : proformas payées
+    proforma_qs = (
+        ProformaInvoice.objects.for_garage(garage)
+        .filter(status=ProformaInvoice.STATUS_RECEIPT)
+        .annotate(computed_total=Sum(F("lines__quantity") * F("lines__unit_price")))
+        .select_related("client")
+    )
+    if date_from:
+        proforma_qs = proforma_qs.filter(paid_at__date__gte=date_from)
+    if date_to:
+        proforma_qs = proforma_qs.filter(paid_at__date__lte=date_to)
+    if method_filter:
+        proforma_qs = proforma_qs.filter(payment_method=method_filter)
+
+    for p in proforma_qs:
+        entries.append({
+            "date": p.paid_at,
+            "reference": p.reference,
+            "client": p.display_client,
+            "amount": p.computed_total or Decimal("0"),
+            "method": p.payment_method,
+            "method_label": dict(ProformaInvoice.PAYMENT_METHODS).get(p.payment_method, p.payment_method),
+            "source": "vente",
+            "url_detail": reverse("proforma_detail", args=[p.pk]),
+        })
+
+    # Source 2 : paiements des factures OR
+    payment_qs = (
+        Payment.objects.filter(invoice__garage=garage)
+        .select_related("invoice__repair_order__client")
+    )
+    if date_from:
+        payment_qs = payment_qs.filter(paid_at__date__gte=date_from)
+    if date_to:
+        payment_qs = payment_qs.filter(paid_at__date__lte=date_to)
+    if method_filter:
+        payment_qs = payment_qs.filter(method=method_filter)
+
+    for pay in payment_qs:
+        client = pay.invoice.repair_order.client if pay.invoice.repair_order else None
+        entries.append({
+            "date": pay.paid_at,
+            "reference": pay.invoice.reference,
+            "client": client.full_name if client else "—",
+            "amount": pay.amount,
+            "method": pay.method,
+            "method_label": dict(Payment.METHOD_CHOICES).get(pay.method, pay.method),
+            "source": "facture_or",
+            "url_detail": reverse("invoice_detail", args=[pay.invoice.pk]),
+        })
+
+    entries.sort(key=lambda e: e["date"] or timezone.datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    return entries
+
+
+def _compute_kpis(entries, garage):
+    """Calcule les KPIs à partir de la liste filtrée + cartes aujourd'hui/ce mois indépendantes."""
+    total = sum(e["amount"] for e in entries)
+    count = len(entries)
+    avg = (total / count) if count else Decimal("0")
+
+    by_method = {}
+    for e in entries:
+        m = e["method"]
+        by_method.setdefault(m, {"label": e["method_label"], "amount": Decimal("0"), "count": 0})
+        by_method[m]["amount"] += e["amount"]
+        by_method[m]["count"] += 1
+
+    for m, data in by_method.items():
+        data["pct"] = int((data["amount"] / total * 100)) if total else 0
+
+    # Cartes indépendantes du filtre période
+    today = date.today()
+    first_of_month = today.replace(day=1)
+    all_entries = _build_cashbook(garage)
+    today_total = sum(e["amount"] for e in all_entries if e["date"] and e["date"].date() == today)
+    month_total = sum(e["amount"] for e in all_entries if e["date"] and e["date"].date() >= first_of_month)
+
+    return {
+        "total": total,
+        "count": count,
+        "avg": avg,
+        "by_method": by_method,
+        "today_total": today_total,
+        "month_total": month_total,
+    }
+
+
+class InvoiceListView(GarageRequiredMixin, View):
+    template_name = "invoicing/invoice_list.html"
+
+    def get(self, request):
+        date_from_str = request.GET.get("date_from", "")
+        date_to_str = request.GET.get("date_to", "")
+        method_filter = request.GET.get("method", "")
+        period = request.GET.get("period", "")
+
+        date_from = None
+        date_to = None
+        today = date.today()
+
+        if period == "today":
+            date_from = date_to = today
+        elif period == "month":
+            date_from = today.replace(day=1)
+            date_to = today
+        else:
+            if date_from_str:
+                try:
+                    from datetime import datetime
+                    date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+            if date_to_str:
+                try:
+                    from datetime import datetime
+                    date_to = datetime.strptime(date_to_str, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+
+        entries = _build_cashbook(self.garage, date_from=date_from, date_to=date_to, method_filter=method_filter)
+        kpis = _compute_kpis(entries, self.garage)
+
+        return render(request, self.template_name, {
+            "entries": entries,
+            "kpis": kpis,
+            "method_choices": Payment.METHOD_CHOICES,
+            "method_filter": method_filter,
+            "period": period,
+            "date_from": date_from_str,
+            "date_to": date_to_str,
+        })
 
 
 # ─── Factures (liées aux ordres de réparation) ──────────────────────────────
@@ -24,33 +173,6 @@ def _sync_invoice_status(invoice):
     else:
         invoice.status = Invoice.STATUS_UNPAID
     invoice.save(update_fields=["status", "updated_at"])
-
-
-class InvoiceListView(GarageRequiredMixin, ListView):
-    model = Invoice
-    template_name = "invoicing/invoice_list.html"
-    context_object_name = "invoices"
-
-    def get_queryset(self):
-        qs = super().get_queryset().select_related("repair_order__vehicle", "repair_order__client")
-        status = self.request.GET.get("status", "")
-        q = self.request.GET.get("q", "").strip()
-        if status:
-            qs = qs.filter(status=status)
-        if q:
-            qs = (
-                qs.filter(reference__icontains=q)
-                | qs.filter(repair_order__vehicle__plate_number__icontains=q)
-                | qs.filter(repair_order__client__full_name__icontains=q)
-            )
-        return qs
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["status_choices"] = Invoice.STATUS_CHOICES
-        ctx["status_filter"] = self.request.GET.get("status", "")
-        ctx["q"] = self.request.GET.get("q", "")
-        return ctx
 
 
 class InvoiceDetailView(GarageRequiredMixin, DetailView):

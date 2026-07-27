@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Case, CharField, OuterRef, Q, Subquery, Value, When
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
@@ -8,7 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 from core.views import GarageRequiredMixin
 
 from .forms import ClientForm, VehicleForm
-from .models import Client, Vehicle
+from .models import Client, Vehicle, VehiclePhoto
 
 
 class ClientListView(GarageRequiredMixin, ListView):
@@ -125,6 +126,7 @@ class VehicleDetailView(GarageRequiredMixin, DetailView):
         ctx['repair_orders'] = self.object.repair_orders.select_related('assigned_mechanic').order_by('-received_at')
         ctx['technical_visits'] = self.object.technical_visits.all()
         ctx['vehicle_insurances'] = self.object.insurances.select_related().prefetch_related('claims').all()
+        ctx['photos'] = self.object.photos.all()
         return ctx
 
 
@@ -145,6 +147,19 @@ class VehicleCreateView(GarageRequiredMixin, CreateView):
             initial['client'] = client_pk
         return initial
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        files = self.request.FILES.getlist("photos")
+        if files:
+            with transaction.atomic():
+                for f in files:
+                    VehiclePhoto.objects.create(
+                        garage=self.object.garage,
+                        vehicle=self.object,
+                        image=f,
+                    )
+        return response
+
     def get_success_url(self):
         messages.success(self.request, "Véhicule ajouté.")
         return reverse('vehicle_detail', args=[self.object.pk])
@@ -159,6 +174,19 @@ class VehicleUpdateView(GarageRequiredMixin, UpdateView):
         kw = super().get_form_kwargs()
         kw['garage'] = self.garage
         return kw
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        files = self.request.FILES.getlist("photos")
+        if files:
+            with transaction.atomic():
+                for f in files:
+                    VehiclePhoto.objects.create(
+                        garage=self.object.garage,
+                        vehicle=self.object,
+                        image=f,
+                    )
+        return response
 
     def get_success_url(self):
         messages.success(self.request, "Véhicule mis à jour.")

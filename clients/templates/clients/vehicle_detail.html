@@ -27,6 +27,12 @@
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Fiche véhicule</h2>
     <dl class="space-y-3 text-sm">
+      {% if vehicle.arrival_number %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">N° d'arrivée</dt>
+        <dd class="font-mono font-black text-[#FFCD11] bg-[#1A1A1A] px-2 py-0.5 rounded text-xs">#{{ vehicle.arrival_number }}</dd>
+      </div>
+      {% endif %}
       <div class="flex justify-between">
         <dt class="text-gray-500">Immatriculation</dt>
         <dd class="font-mono font-black text-[#1A1A1A]">{{ vehicle.plate_number }}</dd>
@@ -65,6 +71,24 @@
         <dd>{{ vehicle.color }}</dd>
       </div>
       {% endif %}
+      {% if vehicle.key_tag %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Repère de clé</dt>
+        <dd class="font-mono font-semibold text-[#7A5C00]">{{ vehicle.key_tag }}</dd>
+      </div>
+      {% endif %}
+      <div class="flex justify-between">
+        <dt class="text-gray-500">Au garage</dt>
+        <dd>
+          {% if vehicle.is_in_garage %}
+            <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Oui{% if vehicle.stored_since %} depuis {{ vehicle.stored_since|date:"d/m/Y" }}{% endif %}
+            </span>
+          {% else %}
+            <span class="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">Non</span>
+          {% endif %}
+        </dd>
+      </div>
       <div class="pt-2 border-t border-gray-100">
         <dt class="text-gray-500 mb-1">Propriétaire</dt>
         <dd>
@@ -169,6 +193,35 @@
   </div>
   {% else %}
   <p class="text-sm text-gray-400">Aucune visite technique enregistrée.</p>
+  {% endif %}
+</div>
+
+<!-- Photos d'état -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Photos d'état
+      <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ photos|length }}</span>
+    </h2>
+    <a href="{% url 'vehicle_update' vehicle.pk %}" class="text-xs text-[#7A5C00] hover:underline font-medium">+ Ajouter des photos</a>
+  </div>
+  {% if photos %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+    {% for photo in photos %}
+    <a href="{{ photo.image.url }}" target="_blank" class="group block rounded-lg overflow-hidden border border-gray-200 hover:border-[#FFCD11] transition-colors">
+      <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:'Photo' }}"
+           class="w-full h-28 object-cover group-hover:opacity-90 transition-opacity">
+      <div class="p-1.5">
+        {% if photo.caption %}
+        <p class="text-xs text-gray-600 font-medium truncate">{{ photo.caption }}</p>
+        {% endif %}
+        <p class="text-[10px] text-gray-400">{{ photo.taken_at|date:"d/m/Y H:i" }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Aucune photo enregistrée.</p>
   {% endif %}
 </div>
 

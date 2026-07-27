@@ -1,5 +1,8 @@
 ﻿__pycache__/
 *.pyc
 db.sqlite3
+*.sqlite3
 .env
 *.log
+media/
+garage_saas/settings_test.py
