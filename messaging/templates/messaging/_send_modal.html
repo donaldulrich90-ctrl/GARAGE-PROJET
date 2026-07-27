@@ -78,7 +78,7 @@
         <svg class="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
         </svg>
-        WhatsApp ouvert — envoyez le message depuis l'application.
+        <span id="waSuccessText">WhatsApp ouvert — envoyez le message depuis l'application.</span>
       </div>
     </div>
 
@@ -142,6 +142,7 @@
   const textarea = document.getElementById('waMessageBody');
   const charCount = document.getElementById('waCharCount');
   const successBanner = document.getElementById('waSuccessBanner');
+  const successText = document.getElementById('waSuccessText');
   const sendBtn = document.getElementById('waSendBtn');
 
   if (textarea) {
@@ -194,6 +195,10 @@
     .then(data => {
       if (data.url) {
         window.open(data.url, '_blank');
+        successText.textContent = 'WhatsApp ouvert — envoyez le message depuis l\'application.';
+        successBanner.classList.remove('hidden');
+      } else if (data.sent) {
+        successText.textContent = 'Message envoyé via WhatsApp Business Cloud ✓';
         successBanner.classList.remove('hidden');
       } else {
         alert(data.error || 'Erreur inconnue');

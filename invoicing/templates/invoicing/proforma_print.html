@@ -2,149 +2,185 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>
     {% if proforma.status == 'receipt' %}Reçu{% elif proforma.status == 'invoice' %}Facture{% else %}Proforma{% endif %}
     — {{ proforma.reference }}
   </title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; background: #fff; padding: 30px; max-width: 700px; margin: 0 auto; }
+    .no-print { text-align: right; margin-bottom: 20px; }
+    .no-print button { background: #1A1A1A; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 8px; }
+    .no-print a { display: inline-block; background: #888; color: #fff; padding: 8px 20px; border-radius: 6px; font-size: 13px; margin-left: 8px; text-decoration: none; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #FFCD11; padding-bottom: 16px; margin-bottom: 20px; }
+    .garage-logo { height: 50px; object-fit: contain; display: block; margin-bottom: 6px; }
+    .garage-name { font-size: 20px; font-weight: 900; color: #1A1A1A; }
+    .garage-info { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.7; }
+    .garage-ids { font-size: 10px; color: #888; margin-top: 4px; }
+    .doc-title { text-align: right; }
+    .doc-type { font-size: 24px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+    .doc-type.proforma { color: #1D4ED8; }
+    .doc-type.invoice-def { color: #C2410C; }
+    .doc-type.receipt { color: #065F46; }
+    .doc-ref { font-size: 14px; color: #333; font-family: monospace; font-weight: 700; margin-top: 5px; }
+    .doc-date { font-size: 12px; color: #555; margin-top: 3px; }
+    .paid-info { font-size: 12px; color: #065F46; font-weight: 700; margin-top: 4px; }
+    .paid-method { font-size: 11px; color: #555; }
+    .section-label { font-size: 10px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .client-name { font-size: 16px; font-weight: 700; color: #1A1A1A; }
+    .client-info { font-size: 12px; color: #555; margin-top: 3px; }
+    .client-section { margin-bottom: 20px; }
+    .notes-section { margin-bottom: 16px; font-size: 12px; color: #555; font-style: italic; padding: 8px 12px; background: #F8F8F6; border-left: 3px solid #FFCD11; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    thead th { background: #1A1A1A; color: #FFCD11; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; }
+    thead th.right { text-align: right; }
+    thead th.center { text-align: center; }
+    tbody td { padding: 7px 10px; border-bottom: 1px solid #F0F0F0; font-size: 12px; vertical-align: top; }
+    tbody td.right { text-align: right; font-weight: 600; }
+    tbody td.center { text-align: center; }
+    tbody td.mono { font-family: monospace; font-size: 11px; color: #888; }
+    tfoot td { padding: 10px; background: #FFFBE0; font-weight: 900; font-size: 15px; border-top: 2px solid #FFCD11; }
+    tfoot td.total-label { text-align: right; text-transform: uppercase; letter-spacing: 0.5px; color: #1A1A1A; }
+    tfoot td.total-amount { text-align: right; font-size: 18px; color: #1A1A1A; }
+    .receipt-confirm { border: 2px solid #059669; border-radius: 8px; padding: 16px 20px; text-align: center; background: #ECFDF5; margin-top: 20px; }
+    .receipt-confirm .rc-title { font-size: 16px; font-weight: 900; color: #065F46; margin-bottom: 8px; }
+    .receipt-confirm .rc-amount { font-size: 13px; font-weight: 700; color: #065F46; margin-bottom: 4px; }
+    .receipt-confirm .rc-method { font-size: 12px; color: #065F46; }
+    .conditions { margin-top: 20px; border-top: 1px solid #E5E5E5; padding-top: 12px; font-size: 11px; color: #888; }
+    .sig-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; }
+    .sig-box { text-align: center; }
+    .sig-box img { height: 60px; object-fit: contain; display: block; margin: 0 auto 4px; }
+    .sig-label { font-size: 10px; color: #888; }
+    .footer { margin-top: 24px; text-align: center; font-size: 11px; color: #aaa; border-top: 1px solid #E5E5E5; padding-top: 10px; }
     @media print {
-      .no-print { display: none !important; }
-      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .no-print { display: none; }
+      body { padding: 10px; }
+      @page { size: A4; margin: 15mm; }
     }
   </style>
 </head>
-<body class="bg-white text-gray-900 max-w-2xl mx-auto p-8 font-sans">
+<body>
 
-  <!-- Bouton impression -->
-  <div class="no-print mb-6 flex gap-3">
-    <button onclick="window.print()"
-            class="bg-[#FFCD11] text-[#1A1A1A] font-bold px-5 py-2 rounded-lg text-sm hover:bg-[#E6B800]">
-      Imprimer / PDF
-    </button>
-    <a href="{% url 'proforma_detail' proforma.pk %}"
-       class="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
-      ← Retour
-    </a>
-  </div>
+<div class="no-print">
+  <button onclick="window.print()">🖨 Imprimer / PDF</button>
+  <a href="{% url 'proforma_detail' proforma.pk %}">← Retour</a>
+</div>
 
-  <!-- En-tête garage -->
-  <div class="flex justify-between items-start mb-8 pb-6 border-b-2 border-[#FFCD11]">
-    <div>
-      {% if garage.logo %}
-      <img src="{{ garage.logo.url }}" alt="Logo" class="h-14 mb-2 object-contain">
-      {% endif %}
-      <div class="text-2xl font-black text-[#1A1A1A]">{{ garage.name }}</div>
-      {% if garage.city %}<div class="text-sm text-gray-500">{{ garage.city }}</div>{% endif %}
-      {% if garage.address %}<div class="text-sm text-gray-500">{{ garage.address }}</div>{% endif %}
-      {% if garage.phone %}<div class="text-sm text-gray-500">Tél : {{ garage.phone }}</div>{% endif %}
-      {% if garage.email %}<div class="text-sm text-gray-500">{{ garage.email }}</div>{% endif %}
-      {% if garage.ifu %}<div class="text-xs text-gray-400 mt-1">IFU : {{ garage.ifu }}</div>{% endif %}
-      {% if garage.rccm %}<div class="text-xs text-gray-400">RCCM : {{ garage.rccm }}</div>{% endif %}
+<header>
+  <div>
+    {% if garage.logo %}
+    <img src="{{ garage.logo.url }}" alt="Logo" class="garage-logo">
+    {% endif %}
+    <div class="garage-name">{{ garage.name }}</div>
+    <div class="garage-info">
+      {% if garage.address %}{{ garage.address }}<br>{% endif %}
+      {% if garage.city %}{{ garage.city }}<br>{% endif %}
+      {% if garage.phone %}Tél : {{ garage.phone }}<br>{% endif %}
+      {% if garage.whatsapp_number %}WhatsApp : {{ garage.whatsapp_number }}<br>{% endif %}
+      {% if garage.email %}{{ garage.email }}{% endif %}
     </div>
-    <div class="text-right">
-      <div class="text-3xl font-black uppercase tracking-wide
-        {% if proforma.status == 'receipt' %}text-green-600
-        {% elif proforma.status == 'invoice' %}text-orange-600
-        {% else %}text-blue-600{% endif %}">
-        {% if proforma.status == 'receipt' %}REÇU{% elif proforma.status == 'invoice' %}FACTURE{% else %}PROFORMA{% endif %}
-      </div>
-      <div class="text-lg font-bold text-[#1A1A1A] mt-1 font-mono">{{ proforma.reference }}</div>
-      <div class="text-sm text-gray-500 mt-1">{{ proforma.created_at|date:"d/m/Y" }}</div>
-      {% if proforma.paid_at %}
-      <div class="text-sm text-green-600 font-semibold mt-1">Payé le {{ proforma.paid_at|date:"d/m/Y" }}</div>
-      <div class="text-xs text-gray-500">via {{ proforma.get_payment_method_display }}</div>
-      {% endif %}
+    {% if garage.ifu or garage.rccm %}
+    <div class="garage-ids">
+      {% if garage.ifu %}IFU : {{ garage.ifu }}{% endif %}
+      {% if garage.ifu and garage.rccm %} — {% endif %}
+      {% if garage.rccm %}RCCM : {{ garage.rccm }}{% endif %}
     </div>
-  </div>
-
-  <!-- Destinataire -->
-  <div class="mb-6">
-    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Destinataire</p>
-    <p class="text-lg font-bold text-[#1A1A1A]">{{ proforma.display_client }}</p>
-    {% if proforma.client and proforma.client.phone %}
-    <p class="text-sm text-gray-500">{{ proforma.client.phone }}</p>
     {% endif %}
   </div>
 
-  <!-- Notes -->
-  {% if proforma.notes %}
-  <div class="mb-4 text-sm text-gray-600 italic">{{ proforma.notes }}</div>
-  {% endif %}
-
-  <!-- Tableau des lignes -->
-  <table class="w-full text-sm border-collapse mb-6">
-    <thead>
-      <tr class="bg-[#1A1A1A] text-[#FFCD11] uppercase text-xs">
-        <th class="px-3 py-2.5 text-left">Réf.</th>
-        <th class="px-3 py-2.5 text-left">Désignation</th>
-        <th class="px-3 py-2.5 text-center">Qté</th>
-        <th class="px-3 py-2.5 text-right">P.U. FCFA</th>
-        <th class="px-3 py-2.5 text-right">Total FCFA</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for line in proforma.lines.all %}
-      <tr class="border-b border-gray-100">
-        <td class="px-3 py-2 font-mono text-xs text-gray-500">
-          {% if line.part %}{{ line.part.reference }}{% else %}—{% endif %}
-        </td>
-        <td class="px-3 py-2 font-semibold text-[#1A1A1A]">{{ line.description }}</td>
-        <td class="px-3 py-2 text-center">{{ line.quantity }}</td>
-        <td class="px-3 py-2 text-right">{{ line.unit_price }}</td>
-        <td class="px-3 py-2 text-right font-bold">{{ line.line_total }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="border-t-2 border-[#FFCD11] bg-yellow-50">
-        <td colspan="4" class="px-3 py-3 text-right font-black text-[#1A1A1A] uppercase tracking-wide">TOTAL À PAYER</td>
-        <td class="px-3 py-3 text-right font-black text-xl text-[#1A1A1A]">{{ proforma.total }} FCFA</td>
-      </tr>
-    </tfoot>
-  </table>
-
-  {% if proforma.status == 'receipt' %}
-  <!-- Confirmation paiement -->
-  <div class="border-2 border-green-500 rounded-lg p-4 text-center bg-green-50">
-    <p class="text-green-700 font-black text-lg">REÇU DE PAIEMENT</p>
-    <p class="text-green-600 font-semibold">Somme de {{ proforma.total }} FCFA reçue le {{ proforma.paid_at|date:"d/m/Y à H:i" }}</p>
-    <p class="text-green-600 text-sm">Mode : {{ proforma.get_payment_method_display }}</p>
+  <div class="doc-title">
+    <div class="doc-type
+      {% if proforma.status == 'receipt' %}receipt
+      {% elif proforma.status == 'invoice' %}invoice-def
+      {% else %}proforma{% endif %}">
+      {% if proforma.status == 'receipt' %}REÇU{% elif proforma.status == 'invoice' %}FACTURE{% else %}FACTURE PROFORMA{% endif %}
+    </div>
+    <div class="doc-ref">{{ proforma.reference }}</div>
+    <div class="doc-date">Émis le {{ proforma.created_at|date:"d/m/Y" }}</div>
+    {% if proforma.paid_at %}
+    <div class="paid-info">Payé le {{ proforma.paid_at|date:"d/m/Y à H:i" }}</div>
+    <div class="paid-method">via {{ proforma.get_payment_method_display }}</div>
+    {% endif %}
   </div>
+</header>
+
+<div class="client-section">
+  <div class="section-label">Destinataire</div>
+  <div class="client-name">{{ proforma.display_client }}</div>
+  {% if proforma.client and proforma.client.phone %}
+  <div class="client-info">Tél : {{ proforma.client.phone }}</div>
+  {% endif %}
+</div>
+
+{% if proforma.notes %}
+<div class="notes-section">{{ proforma.notes }}</div>
+{% endif %}
+
+<table>
+  <thead>
+    <tr>
+      <th>Réf.</th>
+      <th>Désignation</th>
+      <th class="center">Qté</th>
+      <th class="right">P.U. FCFA</th>
+      <th class="right">Total FCFA</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for line in proforma.lines.all %}
+    <tr>
+      <td class="mono">{% if line.part %}{{ line.part.reference }}{% else %}—{% endif %}</td>
+      <td style="font-weight:600;">{{ line.description }}</td>
+      <td class="center">{{ line.quantity }}</td>
+      <td class="right">{{ line.unit_price|floatformat:0 }}</td>
+      <td class="right">{{ line.line_total|floatformat:0 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4" class="total-label">TOTAL À PAYER</td>
+      <td class="total-amount">{{ proforma.total|floatformat:0 }} FCFA</td>
+    </tr>
+  </tfoot>
+</table>
+
+{% if proforma.status == 'receipt' %}
+<div class="receipt-confirm">
+  <div class="rc-title">REÇU DE PAIEMENT ✓</div>
+  <div class="rc-amount">Somme de {{ proforma.total|floatformat:0 }} FCFA reçue le {{ proforma.paid_at|date:"d/m/Y à H:i" }}</div>
+  <div class="rc-method">Mode de paiement : {{ proforma.get_payment_method_display }}</div>
+</div>
+{% else %}
+<div class="conditions">
+  {% if proforma.status == 'proforma' %}
+  <p>Ce document est une facture proforma et ne constitue pas un titre de créance. Validité : 30 jours.</p>
   {% else %}
-  <!-- Conditions -->
-  <div class="text-xs text-gray-400 mt-6 border-t border-gray-100 pt-4">
-    {% if proforma.status == 'proforma' %}
-    <p>Ce document est une facture proforma et ne constitue pas un titre de créance.</p>
-    {% else %}
-    <p>Facture payable à réception. Merci de votre confiance.</p>
-    {% endif %}
+  <p>Facture payable à réception. Merci de votre confiance.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if garage.signature or garage.cachet %}
+<div class="sig-row">
+  {% if garage.signature %}
+  <div class="sig-box">
+    <img src="{{ garage.signature.url }}" alt="Signature">
+    <div class="sig-label">Signature</div>
+  </div>
+  {% else %}<div></div>{% endif %}
+  {% if garage.cachet %}
+  <div class="sig-box">
+    <img src="{{ garage.cachet.url }}" alt="Cachet">
+    <div class="sig-label">Cachet</div>
   </div>
   {% endif %}
+</div>
+{% endif %}
 
-  <!-- Signature & cachet -->
-  {% if garage.signature or garage.cachet %}
-  <div class="mt-8 flex justify-between items-end">
-    {% if garage.signature %}
-    <div class="text-center">
-      <img src="{{ garage.signature.url }}" alt="Signature" class="h-16 object-contain mb-1">
-      <p class="text-xs text-gray-400">Signature</p>
-    </div>
-    {% else %}<div></div>{% endif %}
-    {% if garage.cachet %}
-    <div class="text-center">
-      <img src="{{ garage.cachet.url }}" alt="Cachet" class="h-16 object-contain mb-1">
-      <p class="text-xs text-gray-400">Cachet</p>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  <!-- Pied de page -->
-  <div class="mt-8 text-center text-xs text-gray-300">
-    {{ garage.name }}{% if garage.city %} — {{ garage.city }}{% endif %}
-  </div>
+<div class="footer">
+  {{ garage.name }}{% if garage.city %} — {{ garage.city }}{% endif %}{% if garage.phone %} — Tél : {{ garage.phone }}{% endif %} — Merci de votre confiance.
+</div>
 
 </body>
 </html>

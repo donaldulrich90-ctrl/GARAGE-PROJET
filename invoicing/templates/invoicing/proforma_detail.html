@@ -5,7 +5,8 @@
 {% block header_actions %}
   <a href="{% url 'proforma_print' proforma.pk %}" target="_blank"
      class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 font-medium">
-    Imprimer
+    🖨
+    {% if proforma.status == 'receipt' %}Imprimer le reçu{% elif proforma.status == 'invoice' %}Imprimer la facture{% else %}Imprimer la proforma{% endif %}
   </a>
   {% if proforma.status == 'proforma' %}
   <a href="{% url 'proforma_edit' proforma.pk %}"

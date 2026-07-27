@@ -18,14 +18,18 @@
 
 {% block content %}
 <!-- Stats rapides -->
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-[#25D366]">
-    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total envoyés</p>
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total messages</p>
     <p class="text-3xl font-black text-[#1A1A1A] mt-1">{{ total }}</p>
   </div>
-  <div class="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-green-500">
-    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Succès ✅</p>
-    <p class="text-3xl font-black text-green-600 mt-1">{{ sent }}</p>
+  <div class="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-blue-500">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Sortants ↑</p>
+    <p class="text-3xl font-black text-blue-600 mt-1">{{ outgoing }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-purple-500">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Entrants ↓</p>
+    <p class="text-3xl font-black text-purple-600 mt-1">{{ incoming }}</p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5 border-l-4 border-l-red-500">
     <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Échoués ❌</p>
@@ -46,6 +50,15 @@
       </select>
     </div>
     <div>
+      <label class="text-xs text-gray-500 uppercase font-semibold block mb-1">Direction</label>
+      <select name="direction" class="text-sm !w-auto">
+        <option value="">Tous</option>
+        {% for val, label in direction_choices %}
+        <option value="{{ val }}" {% if direction_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
       <label class="text-xs text-gray-500 uppercase font-semibold block mb-1">Type</label>
       <select name="source" class="text-sm !w-auto">
         <option value="">Tous</option>
@@ -58,7 +71,7 @@
             class="px-4 py-2 text-sm bg-[#1A1A1A] text-white rounded-lg hover:bg-[#2A2A2A] transition-colors font-medium">
       Filtrer
     </button>
-    {% if status_filter or source_filter %}
+    {% if status_filter or source_filter or direction_filter %}
     <a href="{% url 'wa_history' %}" class="text-sm text-gray-500 hover:text-gray-700 underline">Réinitialiser</a>
     {% endif %}
   </form>
@@ -74,6 +87,7 @@
         <th class="px-4 py-3 text-left">Client</th>
         <th class="px-4 py-3 text-left">Téléphone</th>
         <th class="px-4 py-3 text-left">Message</th>
+        <th class="px-4 py-3 text-left">Direction</th>
         <th class="px-4 py-3 text-left">Type</th>
         <th class="px-4 py-3 text-left rounded-tr-xl">Statut</th>
       </tr>
@@ -94,6 +108,13 @@
         <td class="px-4 py-3 font-mono text-xs text-gray-600">{{ log.phone }}</td>
         <td class="px-4 py-3 text-gray-600 max-w-xs">
           <span class="line-clamp-2 text-xs">{{ log.body }}</span>
+        </td>
+        <td class="px-4 py-3">
+          {% if log.direction == 'in' %}
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">↓ Entrant</span>
+          {% else %}
+          <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">↑ Sortant</span>
+          {% endif %}
         </td>
         <td class="px-4 py-3">
           <span class="text-xs px-2 py-0.5 rounded-full font-medium
@@ -123,11 +144,11 @@
     </span>
     <div class="flex gap-2">
       {% if page_obj.has_previous %}
-      <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+      <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if direction_filter %}&direction={{ direction_filter }}{% endif %}"
          class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">← Préc.</a>
       {% endif %}
       {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+      <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if direction_filter %}&direction={{ direction_filter }}{% endif %}"
          class="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">Suiv. →</a>
       {% endif %}
     </div>

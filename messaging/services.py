@@ -1,6 +1,9 @@
 import re
 import urllib.parse
 
+import requests as http_requests
+from django.conf import settings
+
 # Templates système définis statiquement (non modifiables)
 SYSTEM_TEMPLATES = [
     {
@@ -151,3 +154,46 @@ def build_wame_url(phone: str, message: str) -> str:
     """Construit un lien wa.me avec le message pré-rempli."""
     phone = clean_phone(phone)
     return f"https://wa.me/{phone}?text={urllib.parse.quote(message)}"
+
+
+def _api_configured() -> bool:
+    """Retourne True si les variables d'environnement WhatsApp Cloud API sont renseignées."""
+    return bool(
+        getattr(settings, 'WHATSAPP_API_TOKEN', '')
+        and getattr(settings, 'WHATSAPP_PHONE_NUMBER_ID', '')
+    )
+
+
+def send_whatsapp_api(phone: str, body: str) -> tuple[bool, str]:
+    """
+    Envoie un message texte via l'API Meta Cloud.
+    Retourne (True, message_id) en cas de succès, (False, message_erreur) sinon.
+    Ne lève jamais d'exception.
+    """
+    token = settings.WHATSAPP_API_TOKEN
+    phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
+    version = getattr(settings, 'WHATSAPP_API_VERSION', 'v20.0')
+    url = f"https://graph.facebook.com/{version}/{phone_number_id}/messages"
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": clean_phone(phone),
+        "type": "text",
+        "text": {"body": body},
+    }
+    try:
+        resp = http_requests.post(
+            url,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            timeout=10,
+        )
+        data = resp.json()
+        if resp.ok and "messages" in data:
+            return True, data["messages"][0].get("id", "")
+        err = data.get("error", {}).get("message", f"HTTP {resp.status_code}")
+        return False, err
+    except Exception as exc:
+        return False, str(exc)

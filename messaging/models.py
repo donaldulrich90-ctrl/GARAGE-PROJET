@@ -120,10 +120,19 @@ class WhatsAppLog(TenantModel):
         on_delete=models.SET_NULL,
         related_name='logs',
     )
+    DIRECTION_OUT = 'out'
+    DIRECTION_IN = 'in'
+    DIRECTION_CHOICES = [
+        (DIRECTION_OUT, 'Sortant'),
+        (DIRECTION_IN, 'Entrant'),
+    ]
+
     phone = models.CharField('Téléphone', max_length=30)
     body = models.TextField('Message')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_SENT)
     source = models.CharField(max_length=20, choices=SRC_CHOICES, default=SRC_INDIVIDUAL)
+    direction = models.CharField(max_length=3, choices=DIRECTION_CHOICES, default=DIRECTION_OUT)
+    wa_message_id = models.CharField('ID message WA', max_length=128, blank=True)
     error = models.TextField(blank=True)
 
     class Meta:

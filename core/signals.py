@@ -5,6 +5,7 @@ from django.dispatch import receiver
 _TRACKED_APPS = {
     "tenants", "accounts", "clients", "inventory",
     "repair_orders", "invoicing", "expenses", "billing", "hr",
+    "messaging", "technical_visits", "insurance", "taxes",
 }
 
 
