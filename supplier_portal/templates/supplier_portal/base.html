@@ -7,9 +7,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
-<div class="flex min-h-screen">
+<div class="flex min-h-screen relative">
+  <div id="sp-backdrop" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" onclick="toggleSpSidebar()"></div>
   {% with n=request.resolver_match.url_name %}
-  <aside class="w-60 bg-[#1A1A1A] text-white p-4 flex flex-col">
+  <aside id="sp-sidebar" class="w-60 bg-[#1A1A1A] text-white p-4 flex flex-col fixed md:static h-full md:h-auto z-30 -translate-x-full md:translate-x-0 transition-transform duration-200">
     <div class="pb-4 border-b border-gray-700 mb-4">
       <div class="text-xs uppercase text-[#FFCD11] tracking-widest font-bold">Fournisseur</div>
       <div class="text-lg font-black mt-1">{{ request.user.supplier.name }}</div>
@@ -46,13 +47,29 @@
   </aside>
   {% endwith %}
 
-  <main class="flex-1 p-6">
+  <main class="flex-1 p-4 md:p-6 w-full">
     <header class="mb-6">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-[#1A1A1A]">{% block page_title %}{% endblock %}</h1>
-        <div class="flex gap-2">{% block header_actions %}{% endblock %}</div>
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" onclick="toggleSpSidebar()" class="md:hidden -ml-1 p-1.5 rounded hover:bg-gray-200" aria-label="Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1A1A1A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <h1 class="text-xl md:text-2xl font-bold text-[#1A1A1A] truncate">{% block page_title %}{% endblock %}</h1>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-end">{% block header_actions %}{% endblock %}</div>
       </div>
     </header>
+    <script>
+      function toggleSpSidebar() {
+        var sb = document.getElementById('sp-sidebar');
+        var bd = document.getElementById('sp-backdrop');
+        if (!sb || !bd) return;
+        var open = sb.classList.toggle('-translate-x-full') === false;
+        bd.classList.toggle('hidden', !open);
+      }
+    </script>
 
     {% if messages %}
     <div class="mb-4 space-y-2">

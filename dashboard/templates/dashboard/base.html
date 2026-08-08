@@ -36,8 +36,11 @@
 </head>
 <body class="bg-[#F4F3EF] text-gray-900 min-h-screen flex">
 
-  <!-- Sidebar -->
-  <aside class="w-60 bg-[#1A1A1A] text-white flex-shrink-0 flex flex-col fixed h-full z-10 overflow-y-auto">
+  <!-- Backdrop mobile (visible quand sidebar ouvert) -->
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar : cache par defaut sur mobile, visible sur desktop -->
+  <aside id="sidebar" class="w-60 bg-[#1A1A1A] text-white flex-shrink-0 flex flex-col fixed h-full z-30 overflow-y-auto -translate-x-full md:translate-x-0 transition-transform duration-200">
 
     <!-- Marque -->
     <div class="px-5 py-4 border-b border-[#2E2E2E] flex items-center gap-3 flex-shrink-0">
@@ -333,20 +336,36 @@
     </div>
   </aside>
 
-  <!-- Zone principale -->
-  <div class="ml-60 flex-1 flex flex-col min-h-screen">
+  <!-- Zone principale : pas de marge sur mobile, ml-60 sur desktop -->
+  <div class="md:ml-60 flex-1 flex flex-col min-h-screen w-full">
 
     <!-- En-tête -->
-    <header class="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-      <div class="flex items-center gap-3">
-        <div class="w-1 h-6 bg-[#FFCD11] rounded-full"></div>
-        <h1 class="text-base font-bold text-[#1A1A1A] tracking-tight">{% block page_title %}{% endblock %}</h1>
+    <header class="bg-white border-b border-gray-200 px-4 md:px-6 py-3.5 flex items-center justify-between sticky top-0 z-10 shadow-sm gap-2">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Hamburger : visible uniquement sur mobile -->
+        <button type="button" onclick="toggleSidebar()" class="md:hidden -ml-1 p-1.5 rounded hover:bg-gray-100 flex-shrink-0" aria-label="Menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1A1A1A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div class="w-1 h-6 bg-[#FFCD11] rounded-full hidden md:block"></div>
+        <h1 class="text-base font-bold text-[#1A1A1A] tracking-tight truncate">{% block page_title %}{% endblock %}</h1>
       </div>
-      <div class="flex items-center gap-2">{% block header_actions %}{% endblock %}</div>
+      <div class="flex items-center gap-2 flex-wrap justify-end">{% block header_actions %}{% endblock %}</div>
     </header>
 
+    <script>
+      function toggleSidebar() {
+        var sb = document.getElementById('sidebar');
+        var bd = document.getElementById('sidebar-backdrop');
+        if (!sb || !bd) return;
+        var open = sb.classList.toggle('-translate-x-full') === false;
+        bd.classList.toggle('hidden', !open);
+      }
+    </script>
+
     <!-- Contenu -->
-    <main class="flex-1 p-6">
+    <main class="flex-1 p-4 md:p-6">
       {% if messages %}
         {% for message in messages %}
           <div class="mb-4 px-4 py-3 rounded-lg text-sm flex items-center gap-2
