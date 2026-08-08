@@ -3,6 +3,9 @@
 {% block page_title %}Véhicules{% endblock %}
 
 {% block header_actions %}
+  <a href="{% url 'key_board' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    🔑 Tableau à clés
+  </a>
   <a href="{% url 'vehicle_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
     + Nouveau véhicule
   </a>
@@ -24,6 +27,7 @@
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Clé</th>
         <th class="px-4 py-3 text-left">Immatriculation</th>
         <th class="px-4 py-3 text-left">Marque / Modèle</th>
         <th class="px-4 py-3 text-left">Année</th>
@@ -37,6 +41,13 @@
     <tbody class="divide-y divide-gray-50">
       {% for vehicle in vehicles %}
       <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3">
+          {% if vehicle.key_token %}
+          <span class="font-mono font-black text-xs text-[#1A1A1A] bg-[#FFCD11] px-2 py-0.5 rounded">{{ vehicle.key_token }}</span>
+          {% else %}
+          <span class="text-gray-300 text-xs">—</span>
+          {% endif %}
+        </td>
         <td class="px-4 py-3">
           <a href="{% url 'vehicle_detail' vehicle.pk %}" class="text-[#7A5C00] hover:underline font-mono font-bold">
             {{ vehicle.plate_number }}
@@ -79,7 +90,7 @@
       </tr>
       {% empty %}
       <tr>
-        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+        <td colspan="9" class="px-4 py-8 text-center text-gray-400">
           {% if q %}Aucun véhicule trouvé pour "{{ q }}".{% else %}Aucun véhicule enregistré.{% endif %}
         </td>
       </tr>

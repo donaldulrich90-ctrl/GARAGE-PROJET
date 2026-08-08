@@ -1,0 +1,79 @@
+{% extends "supplier_portal/base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+{% block page_title %}Tableau de bord fournisseur{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'supplier_portal:offer_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">
+    + Nouvelle pièce
+  </a>
+  <a href="{% url 'supplier_portal:movement_create' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-100 font-medium">
+    + Mouvement stock
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Références catalogue</div>
+    <div class="text-3xl font-black mt-2 text-[#1A1A1A]">{{ offer_count }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Pièces en stock</div>
+    <div class="text-3xl font-black mt-2 text-[#7A5C00]">{{ total_stock }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Sorties (30j)</div>
+    <div class="text-3xl font-black mt-2 text-[#1A1A1A]">{{ recent_out_count }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">CA 30 jours (FCFA)</div>
+    <div class="text-3xl font-black mt-2 text-green-700">{{ recent_out_total|default:0|floatformat:0 }}</div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Stock faible</h2>
+    {% if low_stock %}
+    <ul class="divide-y divide-gray-100">
+      {% for offer in low_stock %}
+      <li class="py-2 flex items-center justify-between text-sm">
+        <a href="{% url 'supplier_portal:offer_update' offer.pk %}" class="text-[#7A5C00] hover:underline font-medium">
+          {{ offer.catalog_part.name }}
+        </a>
+        <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">
+          Stock : {{ offer.quantity_available }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucune pièce en rupture.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Derniers mouvements</h2>
+    {% if recent_movements %}
+    <ul class="divide-y divide-gray-100">
+      {% for mv in recent_movements %}
+      <li class="py-2 text-sm">
+        <div class="flex justify-between">
+          <span class="font-medium">{{ mv.supplier_part.catalog_part.name }}</span>
+          <span class="text-xs {% if mv.movement_type == 'out' %}text-red-700{% elif mv.movement_type == 'in' %}text-green-700{% else %}text-gray-500{% endif %} font-semibold">
+            {% if mv.movement_type == 'in' %}+{% elif mv.movement_type == 'out' %}−{% endif %}{{ mv.quantity }}
+          </span>
+        </div>
+        <div class="text-xs text-gray-400">
+          {{ mv.created_at|date:"d/m/Y H:i" }}
+          {% if mv.destination_garage %} — {{ mv.destination_garage.name }}{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-gray-400">Aucun mouvement enregistré.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

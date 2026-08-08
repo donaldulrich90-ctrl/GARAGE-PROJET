@@ -1,6 +1,8 @@
 from django import forms
 
-from .models import Part, Supplier
+from catalog.models import CatalogPart
+
+from .models import Part, Supplier, SupplierPart
 
 _INPUT = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500'
 
@@ -26,11 +28,29 @@ class SupplierForm(forms.ModelForm):
 class PartForm(forms.ModelForm):
     class Meta:
         model = Part
-        fields = ['reference', 'name', 'category', 'supplier', 'unit_price', 'quantity_in_stock', 'alert_threshold']
+        fields = ['catalog_part', 'reference', 'name', 'category', 'supplier', 'unit_price', 'quantity_in_stock', 'alert_threshold']
+        help_texts = {
+            'catalog_part': "Optionnel : lier la pièce à une fiche catalogue partagée.",
+        }
 
     def __init__(self, *args, garage=None, **kwargs):
         super().__init__(*args, **kwargs)
         if garage:
             self.fields['supplier'].queryset = Supplier.objects.for_garage(garage)
         self.fields['supplier'].required = False
+        self.fields['catalog_part'].required = False
+        self.fields['catalog_part'].queryset = CatalogPart.objects.select_related('category').order_by('name')
+        _style(self)
+
+
+class SupplierPartForm(forms.ModelForm):
+    class Meta:
+        model = SupplierPart
+        fields = ['supplier', 'catalog_part', 'unit_price', 'quantity_available', 'lead_time_days', 'supplier_reference', 'notes']
+
+    def __init__(self, *args, garage=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if garage:
+            self.fields['supplier'].queryset = Supplier.objects.for_garage(garage)
+        self.fields['catalog_part'].queryset = CatalogPart.objects.select_related('category').order_by('name')
         _style(self)

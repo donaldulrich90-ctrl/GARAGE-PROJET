@@ -1,0 +1,78 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Comparer les prix — {{ catalog_part.name }}{% endblock %}
+{% block page_title %}Comparer les fournisseurs{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'supplier_part_create' %}?catalog_part={{ catalog_part.pk }}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Ajouter une offre pour cette pièce
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'supplier_part_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux offres</a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+  <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Fiche catalogue</h2>
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <p class="text-lg font-bold text-[#1A1A1A]">{{ catalog_part.name }}</p>
+      <p class="text-xs text-gray-500 font-mono mt-1">{{ catalog_part.reference }}</p>
+      {% if catalog_part.category %}<p class="text-xs text-gray-500 mt-1">Catégorie : {{ catalog_part.category.name }}</p>{% endif %}
+      {% if catalog_part.is_universal %}
+        <span class="inline-block mt-2 text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">Universelle</span>
+      {% else %}
+        <p class="text-xs text-gray-500 mt-2">Compatible avec : {% for m in catalog_part.compatible_models.all %}<span class="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded mr-1 mb-1">{{ m }}</span>{% empty %}<span class="text-gray-400">Aucun modèle enregistré</span>{% endfor %}</p>
+      {% endif %}
+    </div>
+    {% if best_offer %}
+    <div class="text-right">
+      <div class="text-[10px] uppercase text-gray-400 tracking-widest">Meilleur prix</div>
+      <div class="text-2xl font-black text-[#7A5C00]">{{ best_offer.unit_price|floatformat:0 }} <span class="text-sm text-gray-500">FCFA</span></div>
+      <div class="text-xs text-gray-500">chez {{ best_offer.supplier.name }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Fournisseur</th>
+        <th class="px-4 py-3 text-left">Réf. fournisseur</th>
+        <th class="px-4 py-3 text-right">Prix (FCFA)</th>
+        <th class="px-4 py-3 text-right">Stock</th>
+        <th class="px-4 py-3 text-right">Délai</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for offer in offers %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors {% if forloop.first %}bg-green-50{% endif %}">
+        <td class="px-4 py-3 font-semibold">
+          {{ offer.supplier.name }}
+          {% if forloop.first %}<span class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">MEILLEUR</span>{% endif %}
+        </td>
+        <td class="px-4 py-3 text-xs font-mono text-gray-600">{{ offer.supplier_reference|default:"—" }}</td>
+        <td class="px-4 py-3 text-right font-bold">{{ offer.unit_price|floatformat:0 }}</td>
+        <td class="px-4 py-3 text-right">{{ offer.quantity_available }}</td>
+        <td class="px-4 py-3 text-right text-gray-500 text-xs">
+          {% if offer.lead_time_days %}{{ offer.lead_time_days }} j{% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <a href="{% url 'supplier_part_update' offer.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs">Modifier</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+          Aucun fournisseur n'a encore d'offre pour cette pièce dans votre garage.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

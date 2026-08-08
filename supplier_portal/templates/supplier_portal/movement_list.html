@@ -1,0 +1,65 @@
+{% extends "supplier_portal/base.html" %}
+{% block title %}Mouvements de stock{% endblock %}
+{% block page_title %}Mouvements de stock{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'supplier_portal:movement_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">+ Nouveau mouvement</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex gap-3">
+  <select name="type" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Tous les types</option>
+    {% for val, label in types %}
+      <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">Filtrer</button>
+</form>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Date</th>
+        <th class="px-4 py-3 text-left">Type</th>
+        <th class="px-4 py-3 text-left">Pièce</th>
+        <th class="px-4 py-3 text-right">Quantité</th>
+        <th class="px-4 py-3 text-right">Prix appliqué</th>
+        <th class="px-4 py-3 text-left">Destinataire / Raison</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for mv in movements %}
+      <tr class="hover:bg-[#FFFBE0]">
+        <td class="px-4 py-3 text-xs text-gray-500">{{ mv.created_at|date:"d/m/Y H:i" }}</td>
+        <td class="px-4 py-3">
+          {% if mv.movement_type == 'in' %}
+            <span class="text-xs bg-green-50 text-green-800 px-2 py-0.5 rounded-full font-semibold">Entrée</span>
+          {% elif mv.movement_type == 'out' %}
+            <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">Sortie</span>
+          {% else %}
+            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-semibold">Ajustement</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          <div class="font-medium">{{ mv.supplier_part.catalog_part.name }}</div>
+          <div class="text-xs text-gray-400 font-mono">{{ mv.supplier_part.catalog_part.reference }}</div>
+        </td>
+        <td class="px-4 py-3 text-right font-bold">
+          {% if mv.movement_type == 'in' %}+{% elif mv.movement_type == 'out' %}−{% endif %}{{ mv.quantity }}
+        </td>
+        <td class="px-4 py-3 text-right">
+          {% if mv.unit_price %}{{ mv.unit_price|floatformat:0 }} FCFA{% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3 text-xs">
+          {% if mv.destination_garage %}<div class="font-semibold text-gray-700">{{ mv.destination_garage.name }}</div>{% endif %}
+          <div class="text-gray-500">{{ mv.reason }}</div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Aucun mouvement enregistré.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

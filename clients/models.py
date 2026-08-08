@@ -41,8 +41,22 @@ class Vehicle(TenantModel):
 
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="vehicles")
     plate_number = models.CharField("Immatriculation", max_length=30)
-    make = models.CharField("Marque", max_length=60)
-    model = models.CharField("Modèle", max_length=60)
+    make = models.CharField("Marque", max_length=60, blank=True, help_text="Renseigné automatiquement si une marque du catalogue est choisie.")
+    model = models.CharField("Modèle", max_length=60, blank=True, help_text="Renseigné automatiquement si un modèle du catalogue est choisi.")
+    make_ref = models.ForeignKey(
+        "catalog.VehicleMake",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="vehicles",
+        verbose_name="Marque (catalogue)",
+    )
+    model_ref = models.ForeignKey(
+        "catalog.VehicleModel",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="vehicles",
+        verbose_name="Modèle (catalogue)",
+    )
     year = models.PositiveIntegerField(null=True, blank=True)
     fuel_type = models.CharField(max_length=20, choices=FUEL_CHOICES, default="petrol")
     vin = models.CharField("Numéro de châssis (VIN)", max_length=50, blank=True)
@@ -51,6 +65,13 @@ class Vehicle(TenantModel):
     notes = models.TextField(blank=True)
     arrival_number = models.PositiveIntegerField("N° d'arrivée", null=True, blank=True, editable=False)
     key_tag = models.CharField("Repère de clé", max_length=50, blank=True, help_text="Étiquette physique de la clé, ex: A-12")
+    key_token = models.PositiveIntegerField(
+        "N° tableau à clés",
+        null=True,
+        blank=True,
+        editable=False,
+        help_text="Numéro attribué automatiquement, imprimé sur l'étiquette et affecté à un emplacement du tableau à clés.",
+    )
     is_in_garage = models.BooleanField("Actuellement au garage", default=True)
     stored_since = models.DateField("Depuis le", null=True, blank=True)
 
@@ -67,15 +88,38 @@ class Vehicle(TenantModel):
         return f"{self.plate_number} - {self.make} {self.model}"
 
     def save(self, *args, **kwargs):
-        if self.pk is None and self.arrival_number is None:
-            with transaction.atomic():
+        # Synchronisation catalogue → champs texte (compat historique et affichage).
+        if self.make_ref_id and not self.make:
+            self.make = self.make_ref.name
+        if self.model_ref_id and not self.model:
+            self.model = self.model_ref.name
+        with transaction.atomic():
+            if self.pk is None and self.arrival_number is None:
                 max_num = (
                     Vehicle.objects.select_for_update()
                     .filter(garage=self.garage)
                     .aggregate(Max("arrival_number"))["arrival_number__max"]
                 ) or 0
                 self.arrival_number = max_num + 1
-        super().save(*args, **kwargs)
+
+            if self.is_in_garage:
+                if self.key_token is None:
+                    used = set(
+                        Vehicle.objects.select_for_update()
+                        .filter(garage=self.garage, is_in_garage=True, key_token__isnull=False)
+                        .exclude(pk=self.pk)
+                        .values_list("key_token", flat=True)
+                    )
+                    token = 1
+                    while token in used:
+                        token += 1
+                    self.key_token = token
+            else:
+                # Le véhicule quitte le garage : on libère son emplacement
+                # sur le tableau à clés pour un prochain véhicule.
+                self.key_token = None
+
+            super().save(*args, **kwargs)
 
 
 class VehiclePhoto(TenantModel):

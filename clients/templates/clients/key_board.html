@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Tableau à clés{% endblock %}
+{% block page_title %}Tableau à clés{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'vehicle_list' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    ← Véhicules
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <p class="text-sm text-gray-500">
+    <span class="font-bold text-[#1A1A1A]">{{ occupied_count }}</span> / {{ total_slots }} emplacements occupés.
+    Chaque véhicule enregistré comme « au garage » reçoit un n° imprimé sur son étiquette de clé, correspondant à l'emplacement ci-dessous.
+  </p>
+</div>
+
+<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+  {% for slot in slots %}
+    {% if slot.vehicle %}
+    <a href="{% url 'vehicle_detail' slot.vehicle.pk %}"
+       class="block rounded-xl border-2 border-[#FFCD11] bg-[#FFFBE0] p-3 hover:bg-[#FFF3B0] transition-colors">
+      <div class="text-2xl font-black text-[#1A1A1A] leading-none">{{ slot.number }}</div>
+      <div class="mt-2 text-xs font-mono font-bold text-[#7A5C00] truncate">{{ slot.vehicle.plate_number }}</div>
+      <div class="text-[11px] text-gray-600 truncate">{{ slot.vehicle.make }} {{ slot.vehicle.model }}</div>
+      <div class="text-[10px] text-gray-400 truncate mt-0.5">{{ slot.vehicle.client.full_name }}</div>
+    </a>
+    {% else %}
+    <div class="rounded-xl border-2 border-dashed border-gray-200 p-3 flex flex-col justify-center items-center text-gray-300">
+      <div class="text-2xl font-black leading-none">{{ slot.number }}</div>
+      <div class="text-[10px] uppercase tracking-wide mt-2">Libre</div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if overflow %}
+<div class="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
+  <p class="text-sm font-bold text-red-800 mb-2">
+    Tableau complet — {{ overflow|length }} véhicule(s) sans emplacement physique disponible
+  </p>
+  <p class="text-xs text-red-700 mb-3">
+    Ces véhicules ont quand même reçu un n° de token, mais votre tableau à clés n'a que {{ total_slots }} emplacements.
+    Ajoutez des crochets ou augmentez le nombre d'emplacements dans les paramètres du garage.
+  </p>
+  <div class="flex flex-wrap gap-2">
+    {% for v in overflow %}
+    <a href="{% url 'vehicle_detail' v.pk %}" class="text-xs font-mono bg-white border border-red-200 rounded px-2 py-1 text-red-800 hover:bg-red-100">
+      #{{ v.key_token }} — {{ v.plate_number }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

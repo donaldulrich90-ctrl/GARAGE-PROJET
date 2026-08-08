@@ -1,0 +1,17 @@
+{% extends "supplier_portal/base.html" %}
+{% block title %}Supprimer une pièce{% endblock %}
+{% block page_title %}Supprimer une pièce de votre stock{% endblock %}
+
+{% block content %}
+<div class="max-w-lg bg-white rounded-xl border border-gray-200 p-6">
+  <p class="text-sm text-gray-700 mb-4">
+    Voulez-vous vraiment retirer <strong>{{ object.catalog_part.name }}</strong> de votre stock ?
+    Cette action supprime aussi l'historique des mouvements liés.
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700">Confirmer</button>
+    <a href="{% url 'supplier_portal:offer_list' %}" class="ml-3 border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">Annuler</a>
+  </form>
+</div>
+{% endblock %}

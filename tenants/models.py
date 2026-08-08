@@ -57,6 +57,12 @@ class Garage(TimeStampedModel):
         help_text="Permet à ce garage de commander des pièces directement via FAEST depuis la plateforme.",
     )
 
+    key_board_size = models.PositiveIntegerField(
+        "Emplacements du tableau à clés",
+        default=40,
+        help_text="Nombre de crochets/emplacements numérotés sur le tableau à clés du garage.",
+    )
+
     class Meta:
         verbose_name = "Garage"
         verbose_name_plural = "Garages"

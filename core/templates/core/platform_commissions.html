@@ -1,0 +1,106 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Commissions plateforme{% endblock %}
+{% block page_title %}Commissions plateforme{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Nombre de commandes</div>
+    <div class="text-3xl font-black mt-2">{{ totals.order_count|default:0 }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Volume total (GMV)</div>
+    <div class="text-3xl font-black mt-2 text-[#1A1A1A]">{{ totals.total_gmv|default:0|floatformat:0 }} <span class="text-sm text-gray-500">FCFA</span></div>
+  </div>
+  <div class="bg-white rounded-xl border-2 border-[#FFCD11] p-5">
+    <div class="text-xs text-gray-400 uppercase tracking-wider">Commission encaissée</div>
+    <div class="text-3xl font-black mt-2 text-green-700">{{ totals.total_commission|default:0|floatformat:0 }} <span class="text-sm text-gray-500">FCFA</span></div>
+  </div>
+</div>
+
+<form method="get" class="mb-4 flex gap-3">
+  <select name="supplier" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Tous fournisseurs</option>
+    {% for s in suppliers %}
+      <option value="{{ s.pk }}" {% if supplier_filter == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="garage" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">Tous garages</option>
+    {% for g in garages %}
+      <option value="{{ g.pk }}" {% if garage_filter == g.pk|stringformat:"s" %}selected{% endif %}>{{ g.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">Filtrer</button>
+</form>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Par mois</h2>
+    <table class="w-full text-sm">
+      <thead><tr class="text-xs text-gray-400 uppercase border-b"><th class="pb-2 text-left">Mois</th><th class="pb-2 text-right">Commandes</th><th class="pb-2 text-right">Volume</th><th class="pb-2 text-right">Commission</th></tr></thead>
+      <tbody>
+        {% for row in monthly %}
+        <tr class="border-b border-gray-50 last:border-0">
+          <td class="py-2">{{ row.month|date:"F Y" }}</td>
+          <td class="py-2 text-right">{{ row.n }}</td>
+          <td class="py-2 text-right">{{ row.gmv|floatformat:0 }}</td>
+          <td class="py-2 text-right font-bold text-green-700">{{ row.commission|floatformat:0 }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="py-6 text-center text-gray-400">Aucune donnée.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Top fournisseurs</h2>
+    <table class="w-full text-sm">
+      <thead><tr class="text-xs text-gray-400 uppercase border-b"><th class="pb-2 text-left">Fournisseur</th><th class="pb-2 text-right">N</th><th class="pb-2 text-right">Volume</th><th class="pb-2 text-right">Commission</th></tr></thead>
+      <tbody>
+        {% for row in by_supplier %}
+        <tr class="border-b border-gray-50 last:border-0">
+          <td class="py-2">{{ row.supplier__name }}</td>
+          <td class="py-2 text-right">{{ row.n }}</td>
+          <td class="py-2 text-right">{{ row.gmv|floatformat:0 }}</td>
+          <td class="py-2 text-right font-bold text-green-700">{{ row.commission|floatformat:0 }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="py-6 text-center text-gray-400">Aucune donnée.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <div class="p-4 border-b border-gray-200">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Commandes détaillées</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Réf.</th>
+        <th class="px-4 py-3 text-left">Garage</th>
+        <th class="px-4 py-3 text-left">Fournisseur</th>
+        <th class="px-4 py-3 text-left">Statut</th>
+        <th class="px-4 py-3 text-right">Volume</th>
+        <th class="px-4 py-3 text-right">Commission</th>
+        <th class="px-4 py-3 text-left">Validée le</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for order in page_obj %}
+      <tr>
+        <td class="px-4 py-3 font-mono font-bold">{{ order.reference }}</td>
+        <td class="px-4 py-3">{{ order.garage.name }}</td>
+        <td class="px-4 py-3">{{ order.supplier.name }}</td>
+        <td class="px-4 py-3 text-xs">{{ order.get_status_display }}</td>
+        <td class="px-4 py-3 text-right">{{ order.total_amount|floatformat:0 }}</td>
+        <td class="px-4 py-3 text-right font-bold text-green-700">{{ order.commission_amount|floatformat:0 }}</td>
+        <td class="px-4 py-3 text-xs text-gray-500">{{ order.validated_at|date:"d/m/Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Aucune commande.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

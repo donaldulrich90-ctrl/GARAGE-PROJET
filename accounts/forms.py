@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
+from inventory.models import Supplier
 from tenants.models import Garage
 from .models import User
 
@@ -17,7 +18,7 @@ STAFF_ROLE_CHOICES = [
 class GarageSettingsForm(forms.ModelForm):
     class Meta:
         model = Garage
-        fields = ("name", "city", "address", "phone", "whatsapp_number", "email", "ifu", "rccm", "logo", "signature", "cachet")
+        fields = ("name", "city", "address", "phone", "whatsapp_number", "email", "ifu", "rccm", "key_board_size", "logo", "signature", "cachet")
         widgets = {
             "name": forms.TextInput(attrs={"class": _INPUT}),
             "city": forms.TextInput(attrs={"class": _INPUT}),
@@ -27,6 +28,7 @@ class GarageSettingsForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": _INPUT}),
             "ifu": forms.TextInput(attrs={"class": _INPUT}),
             "rccm": forms.TextInput(attrs={"class": _INPUT}),
+            "key_board_size": forms.NumberInput(attrs={"class": _INPUT, "min": 1}),
         }
 
 
@@ -69,6 +71,34 @@ class UserEditForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": _INPUT}),
             "phone": forms.TextInput(attrs={"class": _INPUT}),
         }
+
+
+class SupplierUserCreateForm(UserCreationForm):
+    """Créer un compte utilisateur lié à un Supplier (pour le portail fournisseur)."""
+
+    supplier = forms.ModelChoiceField(
+        queryset=Supplier.objects.none(),
+        widget=forms.Select(attrs={"class": _INPUT}),
+        label="Fournisseur associé",
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "first_name", "last_name", "email", "phone", "supplier")
+        widgets = {
+            "username": forms.TextInput(attrs={"class": _INPUT}),
+            "first_name": forms.TextInput(attrs={"class": _INPUT}),
+            "last_name": forms.TextInput(attrs={"class": _INPUT}),
+            "email": forms.EmailInput(attrs={"class": _INPUT}),
+            "phone": forms.TextInput(attrs={"class": _INPUT}),
+        }
+
+    def __init__(self, *args, garage=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if garage:
+            self.fields["supplier"].queryset = Supplier.objects.for_garage(garage).order_by("name")
+        for field_name in ("password1", "password2"):
+            self.fields[field_name].widget.attrs["class"] = _INPUT
 
 
 class AdminSetPasswordForm(forms.Form):

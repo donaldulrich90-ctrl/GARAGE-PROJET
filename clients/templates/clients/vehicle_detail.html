@@ -9,6 +9,9 @@
   <a href="{% url 'insurance_create' %}?vehicle={{ vehicle.pk }}" class="border border-gray-300 text-gray-700 text-sm px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs">
     + Assurance
   </a>
+  <a href="{% url 'vehicle_keytag_print' vehicle.pk %}" target="_blank" class="border border-gray-300 text-gray-700 text-sm px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium text-xs">
+    🔑 Étiquette clé
+  </a>
   <a href="{% url 'vehicle_update' vehicle.pk %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
     Modifier
   </a>
@@ -71,10 +74,12 @@
         <dd>{{ vehicle.color }}</dd>
       </div>
       {% endif %}
-      {% if vehicle.key_tag %}
-      <div class="flex justify-between">
-        <dt class="text-gray-500">Repère de clé</dt>
-        <dd class="font-mono font-semibold text-[#7A5C00]">{{ vehicle.key_tag }}</dd>
+      {% if vehicle.key_token %}
+      <div class="flex justify-between items-center">
+        <dt class="text-gray-500">Tableau à clés</dt>
+        <dd>
+          <span class="font-mono font-black text-lg text-[#1A1A1A] bg-[#FFCD11] px-2.5 py-0.5 rounded">{{ vehicle.key_token }}</span>
+        </dd>
       </div>
       {% endif %}
       <div class="flex justify-between">

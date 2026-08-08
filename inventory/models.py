@@ -1,6 +1,8 @@
+from decimal import Decimal
+
 from django.db import models
 
-from core.models import TenantModel, TimeStampedModel
+from core.models import TenantModel, TimeStampedModel, gen_reference
 
 
 class Supplier(TenantModel):
@@ -19,12 +21,26 @@ class Supplier(TenantModel):
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     notes = models.TextField(blank=True)
+    commission_rate = models.DecimalField(
+        "Taux de commission plateforme (%)",
+        max_digits=5, decimal_places=2,
+        null=True, blank=True,
+        help_text="Laisser vide pour utiliser le taux plateforme par défaut.",
+    )
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def effective_commission_rate(self):
+        """Taux de commission effectif : override fournisseur ou défaut plateforme."""
+        from django.conf import settings
+        from decimal import Decimal
+        if self.commission_rate is not None:
+            return self.commission_rate
+        return Decimal(str(getattr(settings, "PLATFORM_COMMISSION_RATE", "5.00")))
 
 
 class Part(TenantModel):
@@ -33,6 +49,14 @@ class Part(TenantModel):
     reference = models.CharField("Référence pièce", max_length=80)
     name = models.CharField("Désignation", max_length=150)
     category = models.CharField(max_length=80, blank=True)
+    catalog_part = models.ForeignKey(
+        "catalog.CatalogPart",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="garage_stocks",
+        verbose_name="Pièce catalogue",
+        help_text="Si renseigné, la pièce est liée au catalogue de référence partagé.",
+    )
     supplier = models.ForeignKey(
         Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name="parts"
     )
@@ -59,6 +83,51 @@ class Part(TenantModel):
         return self.quantity_in_stock <= self.alert_threshold
 
 
+class SupplierPart(TenantModel):
+    """
+    Offre d'un fournisseur pour une pièce du catalogue de référence :
+    prix pratiqué + stock disponible chez le fournisseur + délai de livraison.
+
+    Permet à un fournisseur (via l'interface garage ou un import CSV) de
+    tenir à jour sa liste de prix, et au garage de comparer les fournisseurs
+    pour une même pièce catalogue.
+    """
+
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.CASCADE, related_name="catalog_offers",
+    )
+    catalog_part = models.ForeignKey(
+        "catalog.CatalogPart", on_delete=models.CASCADE, related_name="supplier_offers",
+    )
+    unit_price = models.DecimalField(
+        "Prix fournisseur (FCFA)", max_digits=12, decimal_places=2, default=0,
+    )
+    quantity_available = models.PositiveIntegerField(
+        "Stock disponible chez le fournisseur", default=0,
+    )
+    lead_time_days = models.PositiveIntegerField(
+        "Délai livraison (jours)", null=True, blank=True,
+    )
+    supplier_reference = models.CharField(
+        "Réf. interne fournisseur", max_length=100, blank=True,
+    )
+    notes = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["catalog_part__name", "unit_price"]
+        verbose_name = "Offre fournisseur"
+        verbose_name_plural = "Offres fournisseurs"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["garage", "supplier", "catalog_part"],
+                name="unique_supplier_part_per_garage",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.supplier.name} — {self.catalog_part} @ {self.unit_price} FCFA"
+
+
 class StockMovement(TenantModel):
     """Historique des entrées / sorties de stock pour traçabilité."""
 
@@ -83,3 +152,190 @@ class StockMovement(TenantModel):
 
     def __str__(self):
         return f"{self.get_movement_type_display()} {self.quantity} x {self.part}"
+
+
+class SupplierStockMovement(TimeStampedModel):
+    """
+    Mouvement de stock chez un fournisseur (portail fournisseur).
+
+    Non tenant-scoped car un fournisseur gère son propre stock indépendamment
+    des garages qu'il sert. Le lien vers un garage est optionnel : présent
+    quand la sortie correspond à une vente à un garage précis.
+    """
+
+    MOVEMENT_IN = "in"
+    MOVEMENT_OUT = "out"
+    MOVEMENT_ADJUST = "adjust"
+    MOVEMENT_CHOICES = [
+        (MOVEMENT_IN, "Entrée / Réapprovisionnement"),
+        (MOVEMENT_OUT, "Sortie / Vente"),
+        (MOVEMENT_ADJUST, "Ajustement d'inventaire"),
+    ]
+
+    supplier_part = models.ForeignKey(
+        SupplierPart,
+        on_delete=models.CASCADE,
+        related_name="movements",
+        verbose_name="Offre fournisseur",
+    )
+    movement_type = models.CharField(max_length=10, choices=MOVEMENT_CHOICES)
+    quantity = models.IntegerField(help_text="Positif pour entrée, positif aussi pour sortie (le signe est déduit du type).")
+    unit_price = models.DecimalField(
+        "Prix appliqué (FCFA)", max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Prix de vente réel (peut différer du prix catalogue).",
+    )
+    destination_garage = models.ForeignKey(
+        "tenants.Garage",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="supplier_purchases",
+        verbose_name="Garage destinataire",
+        help_text="Renseigné pour une sortie vendue à un garage identifié.",
+    )
+    reason = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Mouvement stock fournisseur"
+        verbose_name_plural = "Mouvements stock fournisseurs"
+
+    def __str__(self):
+        return f"{self.get_movement_type_display()} {self.quantity} × {self.supplier_part}"
+
+    @property
+    def supplier(self):
+        return self.supplier_part.supplier
+
+    def apply_to_stock(self):
+        """Applique le mouvement au stock du SupplierPart lié."""
+        sp = self.supplier_part
+        if self.movement_type == self.MOVEMENT_IN:
+            sp.quantity_available = sp.quantity_available + self.quantity
+        elif self.movement_type == self.MOVEMENT_OUT:
+            sp.quantity_available = max(0, sp.quantity_available - self.quantity)
+        elif self.movement_type == self.MOVEMENT_ADJUST:
+            sp.quantity_available = self.quantity
+        sp.save(update_fields=["quantity_available", "updated_at"])
+
+
+class SupplierOrder(TimeStampedModel):
+    """
+    Commande passée par un garage à un fournisseur via la plateforme.
+    Le paiement n'est PAS géré ici — la plateforme prélève une commission
+    sur le montant validé (revenu marketplace).
+    """
+
+    STATUS_DRAFT = "draft"
+    STATUS_SUBMITTED = "submitted"
+    STATUS_VALIDATED = "validated"
+    STATUS_REJECTED = "rejected"
+    STATUS_SHIPPED = "shipped"
+    STATUS_DELIVERED = "delivered"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Brouillon"),
+        (STATUS_SUBMITTED, "Soumise au fournisseur"),
+        (STATUS_VALIDATED, "Validée par le fournisseur"),
+        (STATUS_REJECTED, "Rejetée par le fournisseur"),
+        (STATUS_SHIPPED, "Expédiée"),
+        (STATUS_DELIVERED, "Livrée / Réceptionnée"),
+        (STATUS_CANCELLED, "Annulée"),
+    ]
+
+    reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
+    garage = models.ForeignKey(
+        "tenants.Garage", on_delete=models.CASCADE, related_name="supplier_orders",
+    )
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.PROTECT, related_name="orders_received",
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    validated_at = models.DateTimeField(null=True, blank=True)
+    rejected_at = models.DateTimeField(null=True, blank=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    # Instantané au moment de la validation (verrouillé pour la facturation commission)
+    total_amount = models.DecimalField("Total (FCFA)", max_digits=14, decimal_places=2, default=0)
+    commission_rate = models.DecimalField("Taux commission (%)", max_digits=5, decimal_places=2, default=0)
+    commission_amount = models.DecimalField("Commission plateforme (FCFA)", max_digits=14, decimal_places=2, default=0)
+
+    garage_note = models.TextField("Note du garage", blank=True)
+    supplier_note = models.TextField("Note du fournisseur", blank=True)
+    rejection_reason = models.CharField("Motif de rejet", max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Commande fournisseur"
+        verbose_name_plural = "Commandes fournisseur"
+
+    def __str__(self):
+        return f"{self.reference} — {self.garage.name} → {self.supplier.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = gen_reference("SO")
+        super().save(*args, **kwargs)
+
+    # ── Transitions de statut ─────────────────────────────────────────────────
+
+    def can_submit(self):
+        return self.status == self.STATUS_DRAFT and self.lines.exists()
+
+    def can_validate(self):
+        return self.status == self.STATUS_SUBMITTED
+
+    def can_reject(self):
+        return self.status == self.STATUS_SUBMITTED
+
+    def can_ship(self):
+        return self.status == self.STATUS_VALIDATED
+
+    def can_deliver(self):
+        return self.status in (self.STATUS_VALIDATED, self.STATUS_SHIPPED)
+
+    def can_cancel(self):
+        return self.status in (self.STATUS_DRAFT, self.STATUS_SUBMITTED)
+
+    def recompute_total(self):
+        total = sum((l.line_total for l in self.lines.all()), Decimal("0"))
+        self.total_amount = total
+        return total
+
+    def snapshot_commission(self):
+        """Verrouille le taux et le montant de commission au moment de la validation."""
+        rate = self.supplier.effective_commission_rate()
+        self.commission_rate = rate
+        self.commission_amount = (self.total_amount * rate / Decimal("100")).quantize(Decimal("0.01"))
+
+
+class SupplierOrderLine(TimeStampedModel):
+    order = models.ForeignKey(SupplierOrder, on_delete=models.CASCADE, related_name="lines")
+    supplier_part = models.ForeignKey(
+        SupplierPart, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="order_lines",
+    )
+    # Snapshots pour intégrité même si l'offre fournisseur est supprimée
+    catalog_reference = models.CharField(max_length=100, blank=True)
+    catalog_name = models.CharField(max_length=200, blank=True)
+    unit_price = models.DecimalField("Prix unitaire (FCFA)", max_digits=12, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.catalog_name or 'pièce'} @ {self.unit_price}"
+
+    @property
+    def line_total(self):
+        return (self.unit_price or Decimal("0")) * self.quantity
+
+    def save(self, *args, **kwargs):
+        if self.supplier_part and not self.catalog_name:
+            self.catalog_name = self.supplier_part.catalog_part.name
+            self.catalog_reference = self.supplier_part.catalog_part.reference
+        super().save(*args, **kwargs)

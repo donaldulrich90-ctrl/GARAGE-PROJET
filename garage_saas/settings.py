@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'tenants',
     'accounts',
     'billing',
+    'catalog',
     'clients',
     'inventory',
     'repair_orders',
@@ -55,6 +56,7 @@ INSTALLED_APPS = [
     'technical_visits',
     'insurance',
     'taxes',
+    'supplier_portal',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -147,7 +149,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard_home'
+LOGIN_REDIRECT_URL = 'post_login_redirect'
 LOGOUT_REDIRECT_URL = '/login/'
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -162,6 +164,11 @@ STORAGES = {
 }
 
 CSRF_TRUSTED_ORIGINS = ['https://gegarage.duckdns.org']
+
+# --- Commission plateforme ---
+# Taux de commission par defaut preleve sur chaque commande fournisseur validee.
+# Override possible par fournisseur (Supplier.commission_rate).
+PLATFORM_COMMISSION_RATE = os.environ.get('PLATFORM_COMMISSION_RATE', '5.00')
 
 # ─── WhatsApp Business Cloud API ──────────────────────────────────────────────
 # Laisser vides → mode wa.me (fallback). Remplir dans Coolify env vars pour activer l'API.

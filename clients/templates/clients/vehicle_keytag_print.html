@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Étiquette clé — {{ vehicle.plate_number }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; color: #111; background: #eee; padding: 30px; }
+    .no-print { text-align: center; margin-bottom: 20px; }
+    .no-print button {
+      background: #1A1A1A; color: #fff; border: none; padding: 8px 20px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; margin: 0 4px;
+    }
+    .no-print button.close { background: #888; }
+    .tag {
+      width: 300px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px dashed #999;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .tag .garage-name { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .tag .token {
+      font-size: 64px;
+      font-weight: 900;
+      color: #1A1A1A;
+      background: #FFCD11;
+      border-radius: 10px;
+      margin: 10px 0;
+      padding: 10px 0;
+      line-height: 1;
+    }
+    .tag .token-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: -4px; margin-bottom: 10px; }
+    .tag .plate { font-size: 20px; font-weight: 900; font-family: monospace; color: #1A1A1A; border: 2px solid #1A1A1A; border-radius: 6px; padding: 4px 8px; display: inline-block; margin-bottom: 8px; }
+    .tag .make-model { font-size: 13px; font-weight: 700; color: #333; }
+    .tag .client { font-size: 12px; color: #555; margin-top: 4px; }
+    .tag .arrival { font-size: 10px; color: #999; margin-top: 8px; border-top: 1px dashed #ccc; padding-top: 6px; }
+    @media print {
+      .no-print { display: none; }
+      body { background: #fff; padding: 0; }
+      .tag { border: 2px dashed #999; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨 Imprimer l'étiquette</button>
+  <button class="close" onclick="window.close()">✕ Fermer</button>
+</div>
+
+<div class="tag">
+  <div class="garage-name">{{ garage.name }}</div>
+  <div class="token">{{ vehicle.key_token|default:"—" }}</div>
+  <div class="token-label">N° tableau à clés</div>
+  <div class="plate">{{ vehicle.plate_number }}</div>
+  <div class="make-model">{{ vehicle.make }} {{ vehicle.model }}{% if vehicle.color %} — {{ vehicle.color }}{% endif %}</div>
+  <div class="client">{{ vehicle.client.full_name }} — {{ vehicle.client.phone }}</div>
+  <div class="arrival">
+    {% if vehicle.arrival_number %}Arrivée n° {{ vehicle.arrival_number }} — {% endif %}
+    {{ vehicle.stored_since|date:"d/m/Y"|default:"" }}
+  </div>
+</div>
+
+</body>
+</html>

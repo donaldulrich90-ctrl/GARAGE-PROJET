@@ -1,0 +1,22 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Supprimer l'offre{% endblock %}
+{% block page_title %}Supprimer une offre fournisseur{% endblock %}
+
+{% block content %}
+<div class="max-w-lg bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <p class="text-sm text-gray-700 mb-4">
+    Voulez-vous vraiment supprimer l'offre
+    <strong>{{ object.supplier.name }} — {{ object.catalog_part.name }}</strong>
+    à <strong>{{ object.unit_price|floatformat:0 }} FCFA</strong> ?
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">
+      Confirmer la suppression
+    </button>
+    <a href="{% url 'supplier_part_list' %}" class="ml-3 border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+      Annuler
+    </a>
+  </form>
+</div>
+{% endblock %}

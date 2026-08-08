@@ -4,12 +4,22 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Case, CharField, OuterRef, Q, Subquery, Value, When
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from core.views import GarageRequiredMixin
 
+from catalog.models import VehicleModel as CatalogModel
+
 from .forms import ClientForm, VehicleForm
 from .models import Client, Vehicle, VehiclePhoto
+
+
+def _make_model_json():
+    """Retourne un dict {make_id: [[model_id, model_name], ...]} pour la cascade côté formulaire."""
+    result = {}
+    for m in CatalogModel.objects.all().order_by('name').values('id', 'name', 'make_id'):
+        result.setdefault(str(m['make_id']), []).append([m['id'], m['name']])
+    return result
 
 
 class ClientListView(GarageRequiredMixin, ListView):
@@ -147,6 +157,11 @@ class VehicleCreateView(GarageRequiredMixin, CreateView):
             initial['client'] = client_pk
         return initial
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['make_model_map'] = _make_model_json()
+        return ctx
+
     def form_valid(self, form):
         response = super().form_valid(form)
         files = self.request.FILES.getlist("photos")
@@ -175,6 +190,11 @@ class VehicleUpdateView(GarageRequiredMixin, UpdateView):
         kw['garage'] = self.garage
         return kw
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['make_model_map'] = _make_model_json()
+        return ctx
+
     def form_valid(self, form):
         response = super().form_valid(form)
         files = self.request.FILES.getlist("photos")
@@ -191,3 +211,40 @@ class VehicleUpdateView(GarageRequiredMixin, UpdateView):
     def get_success_url(self):
         messages.success(self.request, "Véhicule mis à jour.")
         return reverse('vehicle_detail', args=[self.object.pk])
+
+
+class KeyBoardView(GarageRequiredMixin, TemplateView):
+    """Vue du tableau à clés physique : un emplacement numéroté par véhicule présent au garage."""
+    template_name = 'clients/key_board.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        size = self.garage.key_board_size
+        occupied = {
+            v.key_token: v
+            for v in Vehicle.objects.filter(
+                garage=self.garage, is_in_garage=True, key_token__isnull=False,
+            ).select_related('client')
+        }
+        slots = [{'number': n, 'vehicle': occupied.get(n)} for n in range(1, size + 1)]
+        overflow = sorted(
+            (v for tok, v in occupied.items() if tok > size),
+            key=lambda v: v.key_token,
+        )
+        ctx['slots'] = slots
+        ctx['overflow'] = overflow
+        ctx['occupied_count'] = len(occupied)
+        ctx['total_slots'] = size
+        return ctx
+
+
+class VehicleKeyTagPrintView(GarageRequiredMixin, DetailView):
+    """Étiquette imprimable à accrocher à la clé du véhicule."""
+    model = Vehicle
+    template_name = 'clients/vehicle_keytag_print.html'
+    context_object_name = 'vehicle'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['garage'] = self.garage
+        return ctx

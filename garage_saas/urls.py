@@ -4,10 +4,14 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from accounts.views import post_login_redirect
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("login/", auth_views.LoginView.as_view(template_name="dashboard/login.html"), name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
+    path("apres-login/", post_login_redirect, name="post_login_redirect"),
+    path("fournisseur/", include("supplier_portal.urls")),
     path("", include("dashboard.urls")),
     path("compte/", include("accounts.urls")),
     path("clients/", include("clients.urls")),

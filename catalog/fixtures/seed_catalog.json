@@ -1,0 +1,68 @@
+[
+  {"model": "catalog.vehiclemake", "pk": 1, "fields": {"name": "Toyota", "slug": "toyota", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 2, "fields": {"name": "Nissan", "slug": "nissan", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 3, "fields": {"name": "Hyundai", "slug": "hyundai", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 4, "fields": {"name": "Peugeot", "slug": "peugeot", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 5, "fields": {"name": "Renault", "slug": "renault", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 6, "fields": {"name": "Kia", "slug": "kia", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 7, "fields": {"name": "Ford", "slug": "ford", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 8, "fields": {"name": "Mercedes-Benz", "slug": "mercedes-benz", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 9, "fields": {"name": "Suzuki", "slug": "suzuki", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemake", "pk": 10, "fields": {"name": "Mitsubishi", "slug": "mitsubishi", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 1, "fields": {"make": 1, "name": "Corolla", "slug": "corolla", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 2, "fields": {"make": 1, "name": "Yaris", "slug": "yaris", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 3, "fields": {"make": 1, "name": "Hilux", "slug": "hilux", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 4, "fields": {"make": 1, "name": "RAV4", "slug": "rav4", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 5, "fields": {"make": 1, "name": "Land Cruiser", "slug": "land-cruiser", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 6, "fields": {"make": 2, "name": "Micra", "slug": "micra", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 7, "fields": {"make": 2, "name": "Sunny", "slug": "sunny", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 8, "fields": {"make": 2, "name": "Qashqai", "slug": "qashqai", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 9, "fields": {"make": 2, "name": "Patrol", "slug": "patrol", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 10, "fields": {"make": 3, "name": "i10", "slug": "i10", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 11, "fields": {"make": 3, "name": "Accent", "slug": "accent", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 12, "fields": {"make": 3, "name": "Tucson", "slug": "tucson", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 13, "fields": {"make": 3, "name": "Santa Fe", "slug": "santa-fe", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 14, "fields": {"make": 4, "name": "206", "slug": "206", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 15, "fields": {"make": 4, "name": "208", "slug": "208", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 16, "fields": {"make": 4, "name": "301", "slug": "301", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 17, "fields": {"make": 4, "name": "3008", "slug": "3008", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 18, "fields": {"make": 5, "name": "Logan", "slug": "logan", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 19, "fields": {"make": 5, "name": "Duster", "slug": "duster", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 20, "fields": {"make": 5, "name": "Clio", "slug": "clio", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 21, "fields": {"make": 6, "name": "Picanto", "slug": "picanto", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 22, "fields": {"make": 6, "name": "Rio", "slug": "rio", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 23, "fields": {"make": 6, "name": "Sportage", "slug": "sportage", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 24, "fields": {"make": 7, "name": "Ranger", "slug": "ranger", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 25, "fields": {"make": 7, "name": "Focus", "slug": "focus", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 26, "fields": {"make": 8, "name": "Classe C", "slug": "classe-c", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 27, "fields": {"make": 8, "name": "Classe E", "slug": "classe-e", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 28, "fields": {"make": 8, "name": "Sprinter", "slug": "sprinter", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 29, "fields": {"make": 9, "name": "Swift", "slug": "swift", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 30, "fields": {"make": 9, "name": "Alto", "slug": "alto", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.vehiclemodel", "pk": 31, "fields": {"make": 10, "name": "L200", "slug": "l200", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.vehiclemodel", "pk": 32, "fields": {"make": 10, "name": "Pajero", "slug": "pajero", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.partcategory", "pk": 1, "fields": {"name": "Filtration", "slug": "filtration", "description": "Filtres à huile, à air, à carburant, d'habitacle", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 2, "fields": {"name": "Freinage", "slug": "freinage", "description": "Plaquettes, disques, mâchoires, liquide de frein", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 3, "fields": {"name": "Moteur", "slug": "moteur", "description": "Pièces internes du moteur, courroies, joints", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 4, "fields": {"name": "Suspension / Direction", "slug": "suspension-direction", "description": "Amortisseurs, ressorts, rotules, biellettes", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 5, "fields": {"name": "Électricité", "slug": "electricite", "description": "Batteries, bougies, alternateurs, démarreurs, ampoules", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 6, "fields": {"name": "Carrosserie", "slug": "carrosserie", "description": "Ailes, phares, rétroviseurs, pare-chocs", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 7, "fields": {"name": "Consommables", "slug": "consommables", "description": "Huiles, lubrifiants, liquides de refroidissement", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.partcategory", "pk": 8, "fields": {"name": "Pneumatique", "slug": "pneumatique", "description": "Pneus, chambres à air, valves", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+
+  {"model": "catalog.catalogpart", "pk": 1, "fields": {"reference": "CAT-HUILE-5W40", "name": "Huile moteur 5W40 (1L)", "category": 7, "is_universal": true, "description": "Huile moteur synthétique polyvalente", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.catalogpart", "pk": 2, "fields": {"reference": "CAT-BATTERIE-60AH", "name": "Batterie 12V 60Ah", "category": 5, "is_universal": true, "description": "Batterie plomb standard", "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.catalogpart", "pk": 3, "fields": {"reference": "CAT-AMPOULE-H4", "name": "Ampoule phare H4 12V 60/55W", "category": 5, "is_universal": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}},
+  {"model": "catalog.catalogpart", "pk": 4, "fields": {"reference": "CAT-BOUGIE-STD", "name": "Bougie d'allumage standard", "category": 5, "is_universal": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"}}
+]

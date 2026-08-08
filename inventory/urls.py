@@ -9,4 +9,18 @@ urlpatterns = [
     path('fournisseurs/', views.SupplierListView.as_view(), name='supplier_list'),
     path('fournisseurs/nouveau/', views.SupplierCreateView.as_view(), name='supplier_create'),
     path('fournisseurs/<int:pk>/modifier/', views.SupplierUpdateView.as_view(), name='supplier_update'),
+    # Offres fournisseurs (SupplierPart)
+    path('offres/', views.SupplierPartListView.as_view(), name='supplier_part_list'),
+    path('offres/nouveau/', views.SupplierPartCreateView.as_view(), name='supplier_part_create'),
+    path('offres/<int:pk>/modifier/', views.SupplierPartUpdateView.as_view(), name='supplier_part_update'),
+    path('offres/<int:pk>/supprimer/', views.SupplierPartDeleteView.as_view(), name='supplier_part_delete'),
+    path('catalogue/piece/<int:pk>/comparer/', views.CatalogPartCompareView.as_view(), name='catalog_part_compare'),
+    # Commandes fournisseur (côté garage)
+    path('commandes/', views.SupplierOrderListView.as_view(), name='supplier_order_list'),
+    path('commandes/<int:pk>/', views.SupplierOrderDetailView.as_view(), name='supplier_order_detail'),
+    path('commandes/<int:pk>/soumettre/', views.SupplierOrderSubmitView.as_view(), name='supplier_order_submit'),
+    path('commandes/<int:pk>/annuler/', views.SupplierOrderCancelView.as_view(), name='supplier_order_cancel'),
+    path('commandes/<int:pk>/livrer/', views.SupplierOrderDeliverView.as_view(), name='supplier_order_deliver'),
+    path('fournisseurs/<int:pk>/catalogue/', views.SupplierCatalogView.as_view(), name='supplier_catalog'),
+    path('offres/<int:pk>/ajouter/', views.SupplierOrderAddLineView.as_view(), name='supplier_order_add_line'),
 ]

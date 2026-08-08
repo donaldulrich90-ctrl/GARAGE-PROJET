@@ -62,6 +62,13 @@
           {{ form.rccm }}
         </div>
 
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Emplacements du tableau à clés</label>
+          {{ form.key_board_size }}
+          <p class="text-xs text-gray-400 mt-1">Nombre de crochets numérotés sur le tableau à clés physique du garage.</p>
+          {% if form.key_board_size.errors %}<p class="text-red-600 text-xs mt-1">{{ form.key_board_size.errors|join:", " }}</p>{% endif %}
+        </div>
+
         <div class="sm:col-span-2">
           <label class="block text-sm font-semibold text-gray-700 mb-1">Logo (PNG ou JPG)</label>
           <input type="file" name="logo" accept="image/*"

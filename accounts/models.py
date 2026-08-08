@@ -13,6 +13,7 @@ class User(AbstractUser):
     ROLE_MECHANIC = "mechanic"
     ROLE_CASHIER = "cashier"
     ROLE_STOREKEEPER = "storekeeper"
+    ROLE_SUPPLIER = "supplier"
 
     ROLE_CHOICES = [
         (ROLE_ADMIN, "Administrateur garage"),
@@ -20,6 +21,7 @@ class User(AbstractUser):
         (ROLE_MECHANIC, "Mécanicien"),
         (ROLE_CASHIER, "Caissier"),
         (ROLE_STOREKEEPER, "Magasinier"),
+        (ROLE_SUPPLIER, "Fournisseur"),
     ]
 
     garage = models.ForeignKey(
@@ -28,15 +30,29 @@ class User(AbstractUser):
         related_name="users",
         null=True,
         blank=True,
-        help_text="Vide pour le staff plateforme (superuser).",
+        help_text="Vide pour le staff plateforme (superuser) et les comptes fournisseurs.",
+    )
+    supplier = models.ForeignKey(
+        "inventory.Supplier",
+        on_delete=models.CASCADE,
+        related_name="users",
+        null=True,
+        blank=True,
+        help_text="Renseigné uniquement pour les comptes fournisseurs.",
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True)
     phone = models.CharField(max_length=30, blank=True)
 
     def __str__(self):
+        if self.is_supplier and self.supplier_id:
+            return f"{self.get_full_name() or self.username} (Fournisseur {self.supplier.name})"
         garage_name = self.garage.name if self.garage else "Plateforme"
         return f"{self.get_full_name() or self.username} ({garage_name})"
 
     @property
     def is_garage_admin(self):
         return self.role == self.ROLE_ADMIN
+
+    @property
+    def is_supplier(self):
+        return self.role == self.ROLE_SUPPLIER

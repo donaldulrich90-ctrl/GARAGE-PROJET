@@ -1,7 +1,9 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 
@@ -67,6 +69,69 @@ class GarageRequiredMixin(LoginRequiredMixin):
     def form_valid(self, form):
         form.instance.garage = self.garage
         return super().form_valid(form)
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def platform_commissions(request):
+    """Dashboard des revenus commission plateforme (superuser uniquement)."""
+    from inventory.models import SupplierOrder
+
+    qs = SupplierOrder.objects.filter(
+        status__in=[
+            SupplierOrder.STATUS_VALIDATED,
+            SupplierOrder.STATUS_SHIPPED,
+            SupplierOrder.STATUS_DELIVERED,
+        ]
+    ).select_related("garage", "supplier")
+
+    supplier_filter = request.GET.get("supplier", "")
+    garage_filter = request.GET.get("garage", "")
+    if supplier_filter:
+        qs = qs.filter(supplier_id=supplier_filter)
+    if garage_filter:
+        qs = qs.filter(garage_id=garage_filter)
+
+    totals = qs.aggregate(
+        total_gmv=Sum("total_amount"),
+        total_commission=Sum("commission_amount"),
+        order_count=Count("id"),
+    )
+
+    monthly = list(
+        qs.annotate(month=TruncMonth("validated_at"))
+        .values("month")
+        .annotate(gmv=Sum("total_amount"), commission=Sum("commission_amount"), n=Count("id"))
+        .order_by("-month")[:12]
+    )
+
+    by_supplier = list(
+        qs.values("supplier__name")
+        .annotate(gmv=Sum("total_amount"), commission=Sum("commission_amount"), n=Count("id"))
+        .order_by("-commission")[:20]
+    )
+
+    by_garage = list(
+        qs.values("garage__name")
+        .annotate(gmv=Sum("total_amount"), commission=Sum("commission_amount"), n=Count("id"))
+        .order_by("-commission")[:20]
+    )
+
+    paginator = Paginator(qs.order_by("-validated_at"), 30)
+    page = paginator.get_page(request.GET.get("page"))
+
+    from inventory.models import Supplier
+    from tenants.models import Garage
+    return render(request, "core/platform_commissions.html", {
+        "page_obj": page,
+        "totals": totals,
+        "monthly": monthly,
+        "by_supplier": by_supplier,
+        "by_garage": by_garage,
+        "suppliers": Supplier.objects.all().order_by("name"),
+        "garages": Garage.objects.all().order_by("name"),
+        "supplier_filter": supplier_filter,
+        "garage_filter": garage_filter,
+    })
 
 
 class GarageAdminRequiredMixin(GarageRequiredMixin):

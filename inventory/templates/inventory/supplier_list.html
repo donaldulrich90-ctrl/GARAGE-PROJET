@@ -48,6 +48,7 @@
           <span class="bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-bold">{{ supplier.parts.count }}</span>
         </td>
         <td class="px-4 py-3 text-right">
+          <a href="{% url 'supplier_catalog' supplier.pk %}" class="text-[#7A5C00] hover:text-[#5A4000] text-xs font-bold mr-3">🛒 Commander</a>
           <a href="{% url 'supplier_update' supplier.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs font-medium">Modifier</a>
         </td>
       </tr>

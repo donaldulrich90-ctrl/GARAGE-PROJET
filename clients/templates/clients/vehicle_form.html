@@ -1,4 +1,5 @@
 {% extends "dashboard/base.html" %}
+{% load static %}
 {% block title %}{% if form.instance.pk %}Modifier le véhicule{% else %}Nouveau véhicule{% endif %}{% endblock %}
 {% block page_title %}{% if form.instance.pk %}Modifier {{ form.instance.plate_number }}{% else %}Nouveau véhicule{% endif %}{% endblock %}
 
@@ -6,6 +7,38 @@
 <div class="mb-4">
   <a href="{% url 'vehicle_list' %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour aux véhicules</a>
 </div>
+
+{{ make_model_map|json_script:"make-model-map" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var makeSel = document.querySelector('[data-role="make-select"]');
+  var modelSel = document.querySelector('[data-role="model-select"]');
+  if (!makeSel || !modelSel) return;
+  var raw = document.getElementById('make-model-map');
+  if (!raw) return;
+  var map = JSON.parse(raw.textContent);
+  var currentModel = modelSel.value;
+
+  function refreshModels() {
+    var makeId = makeSel.value;
+    var opts = map[makeId] || [];
+    modelSel.innerHTML = '<option value="">---------</option>';
+    opts.forEach(function (pair) {
+      var opt = document.createElement('option');
+      opt.value = pair[0];
+      opt.textContent = pair[1];
+      if (String(pair[0]) === String(currentModel)) opt.selected = true;
+      modelSel.appendChild(opt);
+    });
+  }
+
+  makeSel.addEventListener('change', function () {
+    currentModel = '';
+    refreshModels();
+  });
+  refreshModels();
+});
+</script>
 
 <div class="max-w-2xl bg-white rounded-xl shadow-sm border border-gray-200 p-6">
   <form method="post" enctype="multipart/form-data" novalidate>

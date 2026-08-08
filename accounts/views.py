@@ -4,8 +4,26 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import AdminSetPasswordForm, GarageSettingsForm, UserCreateForm, UserEditForm
+from .forms import (
+    AdminSetPasswordForm,
+    GarageSettingsForm,
+    SupplierUserCreateForm,
+    UserCreateForm,
+    UserEditForm,
+)
 from .models import User
+
+
+@login_required
+def post_login_redirect(request):
+    """Redirige l'utilisateur après login selon son rôle."""
+    u = request.user
+    if getattr(u, "is_supplier", False) and u.supplier_id:
+        return redirect("supplier_portal:dashboard")
+    if u.garage_id is None:
+        # Staff plateforme (superuser) : envoyer sur l'admin Django.
+        return redirect("/admin/")
+    return redirect("dashboard_home")
 
 
 @login_required
@@ -124,6 +142,31 @@ def user_set_password(request, pk):
     else:
         form = AdminSetPasswordForm()
     return render(request, "accounts/user_set_password.html", {"form": form, "target": target})
+
+
+@login_required
+def supplier_user_create(request):
+    """L'admin garage crée un compte fournisseur pour un de ses fournisseurs."""
+    guard = _require_garage_admin(request)
+    if guard:
+        return guard
+    if request.method == "POST":
+        form = SupplierUserCreateForm(request.POST, garage=request.user.garage)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.garage = None  # comptes fournisseurs = non liés à un garage
+            user.role = User.ROLE_SUPPLIER
+            user.is_staff = False
+            user.is_superuser = False
+            user.save()
+            messages.success(
+                request,
+                f"Compte fournisseur créé pour {user.supplier.name} (identifiant : {user.username}).",
+            )
+            return redirect("user_list")
+    else:
+        form = SupplierUserCreateForm(garage=request.user.garage)
+    return render(request, "accounts/user_form.html", {"form": form, "action": "Créer un compte fournisseur"})
 
 
 @login_required
