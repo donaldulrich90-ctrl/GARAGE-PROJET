@@ -14,6 +14,7 @@ urlpatterns = [
     path('offres/nouveau/', views.SupplierPartCreateView.as_view(), name='supplier_part_create'),
     path('offres/<int:pk>/modifier/', views.SupplierPartUpdateView.as_view(), name='supplier_part_update'),
     path('offres/<int:pk>/supprimer/', views.SupplierPartDeleteView.as_view(), name='supplier_part_delete'),
+    path('catalogue/rechercher/', views.PartSearchView.as_view(), name='part_search'),
     path('catalogue/piece/<int:pk>/comparer/', views.CatalogPartCompareView.as_view(), name='catalog_part_compare'),
     # Commandes fournisseur (côté garage)
     path('commandes/', views.SupplierOrderListView.as_view(), name='supplier_order_list'),

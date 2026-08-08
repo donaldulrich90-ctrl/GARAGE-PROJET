@@ -1,10 +1,10 @@
 from django.contrib import messages
-from django.db.models import Min, Sum
+from django.db.models import Count, Min, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
-from catalog.models import CatalogPart
+from catalog.models import CatalogPart, PartCategory
 from core.views import GarageRequiredMixin
 
 from . import services
@@ -322,6 +322,67 @@ class SupplierOrderDeliverView(GarageRequiredMixin, DetailView):
         except services.OrderTransitionError as e:
             messages.error(request, str(e))
         return redirect('supplier_order_detail', pk=order.pk)
+
+
+class PartSearchView(GarageRequiredMixin, ListView):
+    """Recherche globale dans le catalogue de pièces.
+
+    Chaque résultat affiche la liste déroulante des fournisseurs de ce garage
+    qui proposent cette pièce, avec leur prix et leur délai de livraison.
+    Un bouton par offre permet d'ajouter directement au panier de commande.
+    """
+
+    template_name = 'inventory/part_search.html'
+    context_object_name = 'catalog_parts'
+    paginate_by = 20
+
+    def get_queryset(self):
+        q = self.request.GET.get('q', '').strip()
+        category = self.request.GET.get('category', '')
+        make = self.request.GET.get('make', '')
+        universal_only = self.request.GET.get('universal', '') == '1'
+        available_only = self.request.GET.get('available', '') == '1'
+
+        qs = CatalogPart.objects.select_related('category').prefetch_related(
+            Prefetch(
+                'supplier_offers',
+                queryset=SupplierPart.objects.filter(
+                    garage=self.garage,
+                ).select_related('supplier').order_by('unit_price'),
+                to_attr='offers_for_garage',
+            ),
+        )
+
+        if q:
+            qs = qs.filter(Q(name__icontains=q) | Q(reference__icontains=q))
+        if category:
+            qs = qs.filter(category_id=category)
+        if make:
+            qs = qs.filter(compatible_models__make_id=make).distinct()
+        if universal_only:
+            qs = qs.filter(is_universal=True)
+        if available_only:
+            qs = qs.filter(supplier_offers__garage=self.garage).distinct()
+
+        # Trier: pièces qui ont des offres d'abord, puis alphabétique
+        return qs.annotate(
+            has_offers=Count(
+                'supplier_offers',
+                filter=Q(supplier_offers__garage=self.garage),
+            ),
+        ).order_by('-has_offers', 'name')
+
+    def get_context_data(self, **kwargs):
+        from catalog.models import VehicleMake
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q', '')
+        ctx['selected_category'] = self.request.GET.get('category', '')
+        ctx['selected_make'] = self.request.GET.get('make', '')
+        ctx['universal_only'] = self.request.GET.get('universal', '') == '1'
+        ctx['available_only'] = self.request.GET.get('available', '') == '1'
+        ctx['categories'] = PartCategory.objects.order_by('name')
+        ctx['makes'] = VehicleMake.objects.order_by('name')
+        return ctx
 
 
 class CatalogPartCompareView(GarageRequiredMixin, DetailView):

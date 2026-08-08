@@ -1,0 +1,144 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Rechercher une pièce{% endblock %}
+{% block page_title %}Rechercher une pièce{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-6 bg-white rounded-xl border border-gray-200 p-4">
+  <div class="flex flex-wrap gap-3 mb-3">
+    <input type="text" name="q" value="{{ q }}"
+           placeholder="Nom ou référence pièce…"
+           class="flex-1 min-w-64 border border-gray-300 rounded-lg px-4 py-2 text-sm"
+           autofocus>
+    <button type="submit" class="bg-[#1A1A1A] text-white px-5 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">
+      Rechercher
+    </button>
+  </div>
+  <div class="flex flex-wrap gap-3 items-center text-sm">
+    <select name="category" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white">
+      <option value="">Toutes catégories</option>
+      {% for cat in categories %}
+        <option value="{{ cat.pk }}" {% if selected_category == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="make" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-white">
+      <option value="">Toutes marques compatibles</option>
+      {% for m in makes %}
+        <option value="{{ m.pk }}" {% if selected_make == m.pk|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
+    <label class="inline-flex items-center gap-1.5 text-gray-600">
+      <input type="checkbox" name="universal" value="1" {% if universal_only %}checked{% endif %}>
+      Universelles uniquement
+    </label>
+    <label class="inline-flex items-center gap-1.5 text-gray-600">
+      <input type="checkbox" name="available" value="1" {% if available_only %}checked{% endif %}>
+      Avec offres fournisseurs seulement
+    </label>
+    {% if q or selected_category or selected_make or universal_only or available_only %}
+    <a href="{% url 'part_search' %}" class="text-xs text-gray-500 hover:text-gray-700 ml-auto">✕ Réinitialiser</a>
+    {% endif %}
+  </div>
+</form>
+
+<p class="text-xs text-gray-500 mb-3">{{ page_obj.paginator.count }} pièce(s) dans le catalogue.</p>
+
+<div class="space-y-3">
+  {% for part in catalog_parts %}
+  <details class="bg-white rounded-xl border border-gray-200 group" {% if part.offers_for_garage %}open{% endif %}>
+    <summary class="cursor-pointer p-4 flex items-center justify-between gap-4 hover:bg-[#FFFBE0] rounded-t-xl">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-[#1A1A1A]">{{ part.name }}</span>
+          {% if part.is_universal %}
+            <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">Universelle</span>
+          {% endif %}
+          {% if part.category %}
+            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{{ part.category.name }}</span>
+          {% endif %}
+        </div>
+        <div class="text-xs text-gray-400 font-mono mt-0.5">{{ part.reference }}</div>
+      </div>
+      <div class="text-right flex-shrink-0">
+        {% if part.offers_for_garage %}
+          {% with best=part.offers_for_garage.0 %}
+          <div class="text-xs text-gray-400 uppercase tracking-widest">Meilleur prix</div>
+          <div class="text-lg font-black text-[#7A5C00]">{{ best.unit_price|floatformat:0 }} <span class="text-xs text-gray-500">FCFA</span></div>
+          <div class="text-xs text-gray-500">{{ part.offers_for_garage|length }} fournisseur(s)</div>
+          {% endwith %}
+        {% else %}
+          <div class="text-xs text-gray-400">Aucune offre fournisseur</div>
+          <a href="{% url 'supplier_part_create' %}?catalog_part={{ part.pk }}" class="text-xs text-[#7A5C00] hover:underline">+ Ajouter une offre</a>
+        {% endif %}
+      </div>
+    </summary>
+
+    {% if part.offers_for_garage %}
+    <div class="border-t border-gray-100 p-4 bg-gray-50/50">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-200">
+            <th class="pb-2 text-left">Fournisseur</th>
+            <th class="pb-2 text-right">Prix (FCFA)</th>
+            <th class="pb-2 text-right">Stock</th>
+            <th class="pb-2 text-right">Délai</th>
+            <th class="pb-2 text-right">Ma commande</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for offer in part.offers_for_garage %}
+          <tr class="border-b border-gray-100 last:border-0 {% if forloop.first %}bg-green-50{% endif %}">
+            <td class="py-2">
+              <span class="font-semibold">{{ offer.supplier.name }}</span>
+              {% if forloop.first %}<span class="ml-2 text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-bold">MEILLEUR</span>{% endif %}
+              {% if offer.supplier.is_faest %}<span class="ml-1 text-[10px] bg-[#FFCD11] text-[#1A1A1A] px-1.5 py-0.5 rounded-full font-bold">FAEST</span>{% endif %}
+              {% if offer.supplier_reference %}
+                <div class="text-[11px] text-gray-500 font-mono">Réf. {{ offer.supplier_reference }}</div>
+              {% endif %}
+            </td>
+            <td class="py-2 text-right font-bold">{{ offer.unit_price|floatformat:0 }}</td>
+            <td class="py-2 text-right {% if offer.quantity_available <= 2 %}text-red-700 font-bold{% endif %}">
+              {{ offer.quantity_available }}
+            </td>
+            <td class="py-2 text-right text-xs text-gray-500">
+              {% if offer.lead_time_days %}{{ offer.lead_time_days }} jour(s){% else %}—{% endif %}
+            </td>
+            <td class="py-2 text-right">
+              {% if offer.quantity_available > 0 %}
+              <form method="post" action="{% url 'supplier_order_add_line' offer.pk %}" class="flex items-center justify-end gap-1">
+                {% csrf_token %}
+                <input type="number" name="quantity" value="1" min="1" max="{{ offer.quantity_available }}"
+                       class="w-14 border border-gray-300 rounded px-2 py-0.5 text-sm text-right">
+                <button class="bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded text-xs font-bold hover:bg-[#E6B800]">+</button>
+              </form>
+              {% else %}
+              <span class="text-xs text-gray-400">Rupture</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </details>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+    Aucune pièce ne correspond à ces critères.
+  </div>
+  {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="mt-6 flex items-center justify-center gap-2 text-sm">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
+       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">← Précédent</a>
+  {% endif %}
+  <span class="text-gray-500">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
+       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Suivant →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
