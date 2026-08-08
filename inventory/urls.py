@@ -9,11 +9,10 @@ urlpatterns = [
     path('fournisseurs/', views.SupplierListView.as_view(), name='supplier_list'),
     path('fournisseurs/nouveau/', views.SupplierCreateView.as_view(), name='supplier_create'),
     path('fournisseurs/<int:pk>/modifier/', views.SupplierUpdateView.as_view(), name='supplier_update'),
-    # Offres fournisseurs (SupplierPart)
+    # Offres fournisseurs (SupplierPart) — vue en lecture seule côté garage.
+    # La création/édition/suppression est reservee au portail fournisseur
+    # (/fournisseur/mes-pieces/) — cf. app supplier_portal.
     path('offres/', views.SupplierPartListView.as_view(), name='supplier_part_list'),
-    path('offres/nouveau/', views.SupplierPartCreateView.as_view(), name='supplier_part_create'),
-    path('offres/<int:pk>/modifier/', views.SupplierPartUpdateView.as_view(), name='supplier_part_update'),
-    path('offres/<int:pk>/supprimer/', views.SupplierPartDeleteView.as_view(), name='supplier_part_delete'),
     path('catalogue/rechercher/', views.PartSearchView.as_view(), name='part_search'),
     path('catalogue/piece/<int:pk>/comparer/', views.CatalogPartCompareView.as_view(), name='catalog_part_compare'),
     # Commandes fournisseur (côté garage)

@@ -159,6 +159,7 @@ def add_line_from_supplier_part(order: SupplierOrder, supplier_part: SupplierPar
             supplier_part=supplier_part,
             catalog_reference=supplier_part.catalog_part.reference,
             catalog_name=supplier_part.catalog_part.name,
+            g_code=supplier_part.g_code,
             unit_price=supplier_part.unit_price,
             quantity=quantity,
         )

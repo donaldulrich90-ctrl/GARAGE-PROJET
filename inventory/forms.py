@@ -43,14 +43,5 @@ class PartForm(forms.ModelForm):
         _style(self)
 
 
-class SupplierPartForm(forms.ModelForm):
-    class Meta:
-        model = SupplierPart
-        fields = ['supplier', 'catalog_part', 'unit_price', 'quantity_available', 'lead_time_days', 'supplier_reference', 'notes']
-
-    def __init__(self, *args, garage=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if garage:
-            self.fields['supplier'].queryset = Supplier.objects.for_garage(garage)
-        self.fields['catalog_part'].queryset = CatalogPart.objects.select_related('category').order_by('name')
-        _style(self)
+# SupplierPartForm retire : la creation/edition d'offres est desormais reservee
+# au portail fournisseur (voir supplier_portal.forms.SupplierPartOwnForm).

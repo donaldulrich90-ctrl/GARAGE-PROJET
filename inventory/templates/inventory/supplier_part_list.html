@@ -3,9 +3,9 @@
 {% block page_title %}Offres fournisseurs{% endblock %}
 
 {% block header_actions %}
-  <a href="{% url 'supplier_part_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
-    + Nouvelle offre
-  </a>
+  <span class="text-xs text-gray-500">
+    Vue en lecture seule. Les fournisseurs gerent leurs offres depuis le portail fournisseur.
+  </span>
 {% endblock %}
 
 {% block content %}
@@ -32,7 +32,7 @@
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
         <th class="px-4 py-3 text-left">Fournisseur</th>
         <th class="px-4 py-3 text-left">Pièce catalogue</th>
-        <th class="px-4 py-3 text-left">Réf. fournisseur</th>
+        <th class="px-4 py-3 text-left">G-CODE / Réf.</th>
         <th class="px-4 py-3 text-right">Prix (FCFA)</th>
         <th class="px-4 py-3 text-right">Stock</th>
         <th class="px-4 py-3 text-right">Délai</th>
@@ -49,21 +49,25 @@
           </a>
           <div class="text-xs text-gray-400 font-mono">{{ offer.catalog_part.reference }}</div>
         </td>
-        <td class="px-4 py-3 text-xs font-mono text-gray-600">{{ offer.supplier_reference|default:"—" }}</td>
+        <td class="px-4 py-3 text-xs">
+          {% if offer.g_code %}<div class="font-mono font-bold text-[#7A5C00]">{{ offer.g_code }}</div>{% endif %}
+          {% if offer.supplier_reference %}<div class="font-mono text-gray-500">{{ offer.supplier_reference }}</div>{% endif %}
+          {% if not offer.g_code and not offer.supplier_reference %}—{% endif %}
+        </td>
         <td class="px-4 py-3 text-right font-bold">{{ offer.unit_price|floatformat:0 }}</td>
         <td class="px-4 py-3 text-right">{{ offer.quantity_available }}</td>
         <td class="px-4 py-3 text-right text-gray-500 text-xs">
           {% if offer.lead_time_days %}{{ offer.lead_time_days }} j{% else %}—{% endif %}
         </td>
         <td class="px-4 py-3 text-right">
-          <a href="{% url 'supplier_part_update' offer.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs">Modifier</a>
-          <a href="{% url 'supplier_part_delete' offer.pk %}" class="text-gray-400 hover:text-red-600 text-xs ml-2">Suppr.</a>
+          <a href="{% url 'catalog_part_compare' offer.catalog_part.pk %}" class="text-[#7A5C00] hover:underline text-xs font-bold">Comparer</a>
         </td>
       </tr>
       {% empty %}
       <tr>
         <td colspan="7" class="px-4 py-8 text-center text-gray-400">
-          Aucune offre fournisseur enregistrée. Cliquez sur « Nouvelle offre » pour en ajouter.
+          Aucune offre fournisseur enregistree. Vos fournisseurs doivent ajouter leurs pieces
+          depuis leur portail (comptes fournisseurs a creer depuis Equipe).
         </td>
       </tr>
       {% endfor %}

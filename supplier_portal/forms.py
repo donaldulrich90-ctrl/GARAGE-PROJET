@@ -29,12 +29,22 @@ class SupplierPartOwnForm(forms.ModelForm):
 
     class Meta:
         model = SupplierPart
-        fields = ["catalog_part", "unit_price", "quantity_available", "lead_time_days", "supplier_reference", "notes"]
+        fields = ["catalog_part", "g_code", "unit_price", "quantity_available", "lead_time_days", "supplier_reference", "notes"]
+        help_texts = {
+            "g_code": "Code OEM / fabricant obligatoire — garantit la compatibilité de la pièce lors de l'achat.",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["catalog_part"].queryset = CatalogPart.objects.select_related("category").order_by("name")
+        self.fields["g_code"].required = True
         _style(self)
+
+    def clean_g_code(self):
+        g = (self.cleaned_data.get("g_code") or "").strip().upper()
+        if not g:
+            raise forms.ValidationError("Le G-CODE est obligatoire.")
+        return g
 
 
 class SupplierStockMovementForm(forms.ModelForm):

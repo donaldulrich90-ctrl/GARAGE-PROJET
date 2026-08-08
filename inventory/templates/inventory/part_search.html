@@ -6,7 +6,7 @@
 <form method="get" class="mb-6 bg-white rounded-xl border border-gray-200 p-4">
   <div class="flex flex-wrap gap-3 mb-3">
     <input type="text" name="q" value="{{ q }}"
-           placeholder="Nom ou référence pièce…"
+           placeholder="Nom, référence catalogue ou G-CODE fournisseur…"
            class="flex-1 min-w-64 border border-gray-300 rounded-lg px-4 py-2 text-sm"
            autofocus>
     <button type="submit" class="bg-[#1A1A1A] text-white px-5 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">
@@ -66,8 +66,7 @@
           <div class="text-xs text-gray-500">{{ part.offers_for_garage|length }} fournisseur(s)</div>
           {% endwith %}
         {% else %}
-          <div class="text-xs text-gray-400">Aucune offre fournisseur</div>
-          <a href="{% url 'supplier_part_create' %}?catalog_part={{ part.pk }}" class="text-xs text-[#7A5C00] hover:underline">+ Ajouter une offre</a>
+          <div class="text-xs text-gray-400">Aucun fournisseur ne propose cette piece</div>
         {% endif %}
       </div>
     </summary>
@@ -91,6 +90,9 @@
               <span class="font-semibold">{{ offer.supplier.name }}</span>
               {% if forloop.first %}<span class="ml-2 text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-bold">MEILLEUR</span>{% endif %}
               {% if offer.supplier.is_faest %}<span class="ml-1 text-[10px] bg-[#FFCD11] text-[#1A1A1A] px-1.5 py-0.5 rounded-full font-bold">FAEST</span>{% endif %}
+              {% if offer.g_code %}
+                <div class="text-[11px] text-[#7A5C00] font-mono font-bold">G-CODE : {{ offer.g_code }}</div>
+              {% endif %}
               {% if offer.supplier_reference %}
                 <div class="text-[11px] text-gray-500 font-mono">Réf. {{ offer.supplier_reference }}</div>
               {% endif %}

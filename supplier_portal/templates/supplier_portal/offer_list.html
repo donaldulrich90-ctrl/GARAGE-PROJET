@@ -19,7 +19,7 @@
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
         <th class="px-4 py-3 text-left">Pièce</th>
-        <th class="px-4 py-3 text-left">Ma référence</th>
+        <th class="px-4 py-3 text-left">G-CODE / Ma réf.</th>
         <th class="px-4 py-3 text-right">Prix (FCFA)</th>
         <th class="px-4 py-3 text-right">Stock</th>
         <th class="px-4 py-3 text-right">Délai</th>
@@ -33,7 +33,11 @@
           <div class="font-medium">{{ offer.catalog_part.name }}</div>
           <div class="text-xs text-gray-400 font-mono">{{ offer.catalog_part.reference }}</div>
         </td>
-        <td class="px-4 py-3 text-xs font-mono text-gray-600">{{ offer.supplier_reference|default:"—" }}</td>
+        <td class="px-4 py-3 text-xs">
+          {% if offer.g_code %}<div class="font-mono font-bold text-[#7A5C00]">{{ offer.g_code }}</div>{% endif %}
+          {% if offer.supplier_reference %}<div class="font-mono text-gray-500">{{ offer.supplier_reference }}</div>{% endif %}
+          {% if not offer.g_code and not offer.supplier_reference %}—{% endif %}
+        </td>
         <td class="px-4 py-3 text-right font-bold">{{ offer.unit_price|floatformat:0 }}</td>
         <td class="px-4 py-3 text-right {% if offer.quantity_available <= 2 %}text-red-700 font-bold{% endif %}">{{ offer.quantity_available }}</td>
         <td class="px-4 py-3 text-right text-xs text-gray-500">{% if offer.lead_time_days %}{{ offer.lead_time_days }} j{% else %}—{% endif %}</td>

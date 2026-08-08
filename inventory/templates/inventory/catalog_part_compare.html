@@ -3,9 +3,9 @@
 {% block page_title %}Comparer les fournisseurs{% endblock %}
 
 {% block header_actions %}
-  <a href="{% url 'supplier_part_create' %}?catalog_part={{ catalog_part.pk }}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
-    + Ajouter une offre pour cette pièce
-  </a>
+  <span class="text-xs text-gray-500">
+    Les offres sont gerees par les fournisseurs eux-memes depuis leur portail.
+  </span>
 {% endblock %}
 
 {% block content %}
@@ -41,7 +41,7 @@
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
         <th class="px-4 py-3 text-left">Fournisseur</th>
-        <th class="px-4 py-3 text-left">Réf. fournisseur</th>
+        <th class="px-4 py-3 text-left">G-CODE / Réf.</th>
         <th class="px-4 py-3 text-right">Prix (FCFA)</th>
         <th class="px-4 py-3 text-right">Stock</th>
         <th class="px-4 py-3 text-right">Délai</th>
@@ -55,15 +55,16 @@
           {{ offer.supplier.name }}
           {% if forloop.first %}<span class="ml-2 text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">MEILLEUR</span>{% endif %}
         </td>
-        <td class="px-4 py-3 text-xs font-mono text-gray-600">{{ offer.supplier_reference|default:"—" }}</td>
+        <td class="px-4 py-3 text-xs">
+          {% if offer.g_code %}<div class="font-mono font-bold text-[#7A5C00]">{{ offer.g_code }}</div>{% endif %}
+          {% if offer.supplier_reference %}<div class="font-mono text-gray-500">{{ offer.supplier_reference }}</div>{% endif %}
+        </td>
         <td class="px-4 py-3 text-right font-bold">{{ offer.unit_price|floatformat:0 }}</td>
         <td class="px-4 py-3 text-right">{{ offer.quantity_available }}</td>
         <td class="px-4 py-3 text-right text-gray-500 text-xs">
           {% if offer.lead_time_days %}{{ offer.lead_time_days }} j{% else %}—{% endif %}
         </td>
-        <td class="px-4 py-3 text-right">
-          <a href="{% url 'supplier_part_update' offer.pk %}" class="text-gray-400 hover:text-[#7A5C00] text-xs">Modifier</a>
-        </td>
+        <td class="px-4 py-3 text-right text-xs text-gray-400">—</td>
       </tr>
       {% empty %}
       <tr>

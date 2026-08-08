@@ -99,6 +99,12 @@ class SupplierPart(TenantModel):
     catalog_part = models.ForeignKey(
         "catalog.CatalogPart", on_delete=models.CASCADE, related_name="supplier_offers",
     )
+    g_code = models.CharField(
+        "G-CODE (code de compatibilité)",
+        max_length=80,
+        db_index=True,
+        help_text="Code officiel de la pièce (OEM/fabricant) garantissant sa compatibilité avec le véhicule.",
+    )
     unit_price = models.DecimalField(
         "Prix fournisseur (FCFA)", max_digits=12, decimal_places=2, default=0,
     )
@@ -321,6 +327,7 @@ class SupplierOrderLine(TimeStampedModel):
     # Snapshots pour intégrité même si l'offre fournisseur est supprimée
     catalog_reference = models.CharField(max_length=100, blank=True)
     catalog_name = models.CharField(max_length=200, blank=True)
+    g_code = models.CharField("G-CODE", max_length=80, blank=True)
     unit_price = models.DecimalField("Prix unitaire (FCFA)", max_digits=12, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1)
 
@@ -338,4 +345,6 @@ class SupplierOrderLine(TimeStampedModel):
         if self.supplier_part and not self.catalog_name:
             self.catalog_name = self.supplier_part.catalog_part.name
             self.catalog_reference = self.supplier_part.catalog_part.reference
+        if self.supplier_part and not self.g_code:
+            self.g_code = self.supplier_part.g_code
         super().save(*args, **kwargs)

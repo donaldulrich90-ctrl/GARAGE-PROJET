@@ -35,9 +35,9 @@ class StockMovementAdmin(TenantScopedAdmin, admin.ModelAdmin):
 
 @admin.register(SupplierPart)
 class SupplierPartAdmin(TenantScopedAdmin, admin.ModelAdmin):
-    list_display = ("supplier", "catalog_part", "unit_price", "quantity_available", "lead_time_days", "garage")
+    list_display = ("supplier", "catalog_part", "g_code", "unit_price", "quantity_available", "lead_time_days", "garage")
     list_filter = ("supplier", "garage")
-    search_fields = ("catalog_part__name", "catalog_part__reference", "supplier_reference")
+    search_fields = ("catalog_part__name", "catalog_part__reference", "g_code", "supplier_reference")
 
 
 @admin.register(SupplierStockMovement)

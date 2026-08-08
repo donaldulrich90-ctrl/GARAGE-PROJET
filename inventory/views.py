@@ -8,7 +8,7 @@ from catalog.models import CatalogPart, PartCategory
 from core.views import GarageRequiredMixin
 
 from . import services
-from .forms import PartForm, SupplierForm, SupplierPartForm
+from .forms import PartForm, SupplierForm
 from .models import Part, Supplier, SupplierPart, SupplierOrder
 
 
@@ -133,53 +133,9 @@ class SupplierPartListView(GarageRequiredMixin, ListView):
         return ctx
 
 
-class SupplierPartCreateView(GarageRequiredMixin, CreateView):
-    model = SupplierPart
-    form_class = SupplierPartForm
-    template_name = 'inventory/supplier_part_form.html'
-    success_url = reverse_lazy('supplier_part_list')
-
-    def get_form_kwargs(self):
-        kw = super().get_form_kwargs()
-        kw['garage'] = self.garage
-        return kw
-
-    def get_initial(self):
-        initial = super().get_initial()
-        supplier_pk = self.request.GET.get('supplier')
-        if supplier_pk:
-            initial['supplier'] = supplier_pk
-        return initial
-
-    def form_valid(self, form):
-        messages.success(self.request, "Offre fournisseur enregistrée.")
-        return super().form_valid(form)
-
-
-class SupplierPartUpdateView(GarageRequiredMixin, UpdateView):
-    model = SupplierPart
-    form_class = SupplierPartForm
-    template_name = 'inventory/supplier_part_form.html'
-    success_url = reverse_lazy('supplier_part_list')
-
-    def get_form_kwargs(self):
-        kw = super().get_form_kwargs()
-        kw['garage'] = self.garage
-        return kw
-
-    def form_valid(self, form):
-        messages.success(self.request, "Offre fournisseur mise à jour.")
-        return super().form_valid(form)
-
-
-class SupplierPartDeleteView(GarageRequiredMixin, DeleteView):
-    model = SupplierPart
-    template_name = 'inventory/supplier_part_confirm_delete.html'
-    success_url = reverse_lazy('supplier_part_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, "Offre supprimée.")
-        return super().form_valid(form)
+# La creation/modification/suppression des offres SupplierPart est desormais
+# reservee au portail fournisseur (app supplier_portal). Le garage n'a plus
+# qu'une vue en lecture seule + comparaison des prix.
 
 
 # ── Commandes fournisseur (garage) ────────────────────────────────────────────
@@ -354,7 +310,11 @@ class PartSearchView(GarageRequiredMixin, ListView):
         )
 
         if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(reference__icontains=q))
+            qs = qs.filter(
+                Q(name__icontains=q)
+                | Q(reference__icontains=q)
+                | Q(supplier_offers__g_code__icontains=q)
+            ).distinct()
         if category:
             qs = qs.filter(category_id=category)
         if make:
