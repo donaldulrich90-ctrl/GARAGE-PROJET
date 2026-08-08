@@ -6,3 +6,7 @@ db.sqlite3
 *.log
 media/
 garage_saas/settings_test.py
+test_local.sqlite3-journal
+push_changes.bat
+patch_settings.ps1
+commit_message.txt
