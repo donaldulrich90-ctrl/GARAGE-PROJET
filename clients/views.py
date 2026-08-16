@@ -137,6 +137,14 @@ class VehicleDetailView(GarageRequiredMixin, DetailView):
         ctx['technical_visits'] = self.object.technical_visits.all()
         ctx['vehicle_insurances'] = self.object.insurances.select_related().prefetch_related('claims').all()
         ctx['photos'] = self.object.photos.all()
+        from diagnostics.models import DiagnosticReport
+        ctx['vehicle_diagnostics'] = (
+            DiagnosticReport.objects.for_garage(self.garage)
+            .filter(repair_order__vehicle=self.object)
+            .select_related('technician', 'repair_order')
+            .prefetch_related('codes')
+            .order_by('-scan_date')
+        )
         return ctx
 
 

@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'insurance',
     'taxes',
     'supplier_portal',
+    'workshops',
+    'diagnostics',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

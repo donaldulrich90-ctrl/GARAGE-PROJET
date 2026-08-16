@@ -3,6 +3,7 @@ from django import forms
 from accounts.models import User
 from clients.models import Client, Vehicle
 from inventory.models import Part
+from workshops.models import WorkshopSection
 
 from .models import RepairOrder, RepairOrderPart, RepairOrderTask
 
@@ -46,27 +47,45 @@ class RepairOrderForm(forms.ModelForm):
 class RepairOrderTaskForm(forms.ModelForm):
     class Meta:
         model = RepairOrderTask
-        fields = ['description', 'mechanic', 'cost', 'is_done']
+        fields = ['description', 'section', 'mechanic', 'cost', 'is_done']
 
     def __init__(self, *args, garage=None, **kwargs):
         super().__init__(*args, **kwargs)
         if garage:
+            self.fields['section'].queryset = WorkshopSection.objects.for_garage(garage).filter(is_active=True)
             self.fields['mechanic'].queryset = User.objects.filter(
                 garage=garage, role__in=[User.ROLE_MECHANIC, User.ROLE_ADMIN]
             )
         self.fields['mechanic'].required = False
+        self.fields['section'].required = True
+        self.fields['section'].empty_label = '— Choisir une section —'
         _style(self)
+
+    def clean_section(self):
+        section = self.cleaned_data.get('section')
+        if not section:
+            raise forms.ValidationError('La section est obligatoire pour toute nouvelle tâche.')
+        return section
 
 
 class RepairOrderPartForm(forms.ModelForm):
     class Meta:
         model = RepairOrderPart
-        fields = ['part', 'quantity', 'unit_price']
+        fields = ['part', 'quantity', 'unit_price', 'section']
 
     def __init__(self, *args, garage=None, **kwargs):
         super().__init__(*args, **kwargs)
         if garage:
             self.fields['part'].queryset = Part.objects.for_garage(garage)
+            self.fields['section'].queryset = WorkshopSection.objects.for_garage(garage).filter(is_active=True)
         self.fields['unit_price'].required = False
         self.fields['unit_price'].help_text = "Laissez vide pour utiliser le prix catalogue."
+        self.fields['section'].required = True
+        self.fields['section'].empty_label = '— Choisir une section —'
         _style(self)
+
+    def clean_section(self):
+        section = self.cleaned_data.get('section')
+        if not section:
+            raise forms.ValidationError('La section est obligatoire pour toute nouvelle pièce.')
+        return section

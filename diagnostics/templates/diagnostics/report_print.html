@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport de diagnostic — {{ report.reference }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1A1A1A; background: #fff; }
+    .page { width: 210mm; max-width: 100%; margin: 0 auto; padding: 18mm 15mm 15mm; }
+
+    /* En-tête */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #FFCD11; padding-bottom: 12px; margin-bottom: 16px; }
+    .garage-info { flex: 1; }
+    .garage-name { font-size: 16pt; font-weight: 900; color: #1A1A1A; }
+    .garage-meta { font-size: 9pt; color: #555; margin-top: 4px; line-height: 1.5; }
+    .logo-box { width: 80px; text-align: right; }
+    .logo-box img { max-width: 80px; max-height: 60px; object-fit: contain; }
+
+    /* Titre rapport */
+    .report-title { text-align: center; margin: 16px 0; }
+    .report-title h1 { font-size: 15pt; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #1A1A1A; }
+    .report-title .ref-line { margin-top: 6px; font-size: 9pt; color: #555; }
+
+    /* Sections info */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+    .info-block { border: 1px solid #E5E7EB; border-radius: 6px; padding: 10px 12px; }
+    .info-block h3 { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; font-weight: 700; margin-bottom: 6px; border-bottom: 1px solid #F3F4F6; padding-bottom: 4px; }
+    .info-block dl { font-size: 10pt; }
+    .info-block dt { color: #6B7280; font-size: 9pt; }
+    .info-block dd { font-weight: 600; margin-bottom: 3px; }
+
+    /* Tableau DTC */
+    .section-title { font-size: 11pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1A1A1A; margin: 18px 0 8px; border-left: 4px solid #FFCD11; padding-left: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th { background: #1A1A1A; color: #fff; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding: 6px 8px; text-align: left; }
+    td { padding: 6px 8px; font-size: 10pt; border-bottom: 1px solid #F3F4F6; vertical-align: top; }
+    tr:nth-child(even) td { background: #F9FAFB; }
+    .code-cell { font-family: monospace; font-weight: 900; font-size: 10pt; }
+    .status-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 8pt; font-weight: 700; }
+    .status-present { background: #FEE2E2; color: #B91C1C; }
+    .status-stored { background: #FEF3C7; color: #92400E; }
+    .status-history { background: #F3F4F6; color: #4B5563; }
+    .status-pending { background: #FEF9C3; color: #A16207; }
+    .status-info { background: #DBEAFE; color: #1D4ED8; }
+
+    /* Texte libre */
+    .text-block { margin: 10px 0 16px; font-size: 10pt; line-height: 1.6; color: #1A1A1A; border-left: 3px solid #E5E7EB; padding-left: 12px; white-space: pre-wrap; }
+
+    /* Pied de page */
+    .footer { margin-top: 30px; padding-top: 14px; border-top: 2px solid #1A1A1A; }
+    .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .signature-box { text-align: center; }
+    .signature-box .sig-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #6B7280; margin-bottom: 40px; }
+    .signature-box .sig-line { border-top: 1px solid #1A1A1A; padding-top: 4px; font-size: 8.5pt; color: #555; }
+    .mention { margin-top: 16px; font-size: 8pt; color: #6B7280; font-style: italic; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 10px; line-height: 1.5; }
+
+    /* Impression */
+    @media print {
+      body { margin: 0; }
+      .page { padding: 10mm 12mm; }
+      .no-print { display: none !important; }
+      table { page-break-inside: avoid; }
+      .info-grid { page-break-inside: avoid; }
+    }
+    .print-btn { position: fixed; top: 20px; right: 20px; background: #FFCD11; color: #1A1A1A; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,.15); z-index: 100; }
+  </style>
+</head>
+<body>
+<button class="print-btn no-print" onclick="window.print()">🖨 Imprimer</button>
+
+<div class="page">
+  <!-- EN-TÊTE -->
+  <div class="header">
+    <div class="garage-info">
+      <div class="garage-name">{{ garage.name }}</div>
+      <div class="garage-meta">
+        {% if garage.address %}{{ garage.address }}<br>{% endif %}
+        {% if garage.phone %}Tél : {{ garage.phone }}{% endif %}{% if garage.whatsapp_number %} — WhatsApp : {{ garage.whatsapp_number }}{% endif %}<br>
+        {% if garage.email %}Email : {{ garage.email }}<br>{% endif %}
+        {% if garage.ifu %}IFU : {{ garage.ifu }}{% endif %}{% if garage.rccm %} — RCCM : {{ garage.rccm }}{% endif %}
+      </div>
+    </div>
+    <div class="logo-box">
+      {% if garage.logo %}
+      <img src="{{ garage.logo.url }}" alt="Logo {{ garage.name }}">
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- TITRE -->
+  <div class="report-title">
+    <h1>Rapport de Diagnostic Automobile</h1>
+    <div class="ref-line">
+      Réf. : <strong>{{ report.reference }}</strong> &nbsp;|&nbsp;
+      Date : <strong>{{ report.scan_date|date:"d/m/Y à H:i" }}</strong> &nbsp;|&nbsp;
+      OR : <strong>{{ order.reference }}</strong>
+    </div>
+  </div>
+
+  <!-- INFOS CLIENT / VÉHICULE / OUTIL -->
+  <div class="info-grid">
+    <div class="info-block">
+      <h3>Client</h3>
+      <dl>
+        <dt>Nom</dt><dd>{{ client.full_name }}</dd>
+        <dt>Téléphone</dt><dd>{{ client.phone }}</dd>
+      </dl>
+    </div>
+    <div class="info-block">
+      <h3>Véhicule</h3>
+      <dl>
+        <dt>Immatriculation</dt><dd>{{ vehicle.plate_number }}</dd>
+        <dt>Marque / Modèle</dt><dd>{{ vehicle.make }} {{ vehicle.model }}{% if vehicle.year %} ({{ vehicle.year }}){% endif %}</dd>
+        {% if vehicle.vin %}<dt>VIN</dt><dd style="font-family:monospace;font-size:9pt">{{ vehicle.vin }}</dd>{% endif %}
+        {% if report.mileage %}<dt>Kilométrage</dt><dd>{{ report.mileage }} km</dd>{% endif %}
+      </dl>
+    </div>
+    <div class="info-block">
+      <h3>Outil de diagnostic</h3>
+      <dl>
+        {% if report.scanner_name %}<dt>Scanner</dt><dd>{{ report.scanner_name }}</dd>{% endif %}
+        {% if report.technician %}<dt>Technicien</dt><dd>{{ report.technician.get_full_name|default:report.technician.username }}</dd>{% endif %}
+        <dt>Date et heure</dt><dd>{{ report.scan_date|date:"d/m/Y H:i" }}</dd>
+      </dl>
+    </div>
+    <div class="info-block">
+      <h3>OR</h3>
+      <dl>
+        <dt>Référence</dt><dd>{{ order.reference }}</dd>
+        <dt>Statut</dt><dd>{{ order.get_status_display }}</dd>
+        <dt>Reçu le</dt><dd>{{ order.received_at|date:"d/m/Y" }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- TABLEAU DTC -->
+  <div class="section-title">Résultat du scan — Codes défauts (DTC)</div>
+  {% if report.codes.all %}
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Calculateur / Système</th>
+        <th>Description</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dtc in report.codes.all %}
+      <tr>
+        <td class="code-cell">{{ dtc.code }}</td>
+        <td>{{ dtc.module_system|default:"—" }}</td>
+        <td>{{ dtc.description|default:"—" }}</td>
+        <td>
+          <span class="status-badge status-{{ dtc.status }}">{{ dtc.get_status_display }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:#6B7280;font-style:italic;font-size:10pt;">Aucun code défaut détecté lors de ce scan.</p>
+  {% endif %}
+
+  {% if report.observations %}
+  <div class="section-title">Observations du technicien</div>
+  <div class="text-block">{{ report.observations }}</div>
+  {% endif %}
+
+  {% if report.recommendations %}
+  <div class="section-title">Recommandations</div>
+  <div class="text-block">{{ report.recommendations }}</div>
+  {% endif %}
+
+  <!-- SIGNATURES -->
+  <div class="footer">
+    <div class="signatures">
+      <div class="signature-box">
+        <div class="sig-label">Technicien</div>
+        {% if report.technician %}
+        <div class="sig-line">{{ report.technician.get_full_name|default:report.technician.username }}</div>
+        {% else %}
+        <div class="sig-line">&nbsp;</div>
+        {% endif %}
+        {% if garage.signature %}<img src="{{ garage.signature.url }}" style="max-height:40px;margin-top:4px;" alt="signature">{% endif %}
+      </div>
+      <div class="signature-box">
+        <div class="sig-label">Responsable atelier</div>
+        <div class="sig-line">&nbsp;</div>
+        {% if garage.cachet %}<img src="{{ garage.cachet.url }}" style="max-height:40px;margin-top:4px;" alt="cachet">{% endif %}
+      </div>
+      <div class="signature-box">
+        <div class="sig-label">Signature du client</div>
+        <div class="sig-line">Lu et approuvé</div>
+      </div>
+    </div>
+
+    <div class="mention">
+      Ce rapport présente les défauts détectés au moment du diagnostic. Les codes défauts doivent être interprétés avec les contrôles mécaniques et électriques appropriés avant tout remplacement de pièce.<br>
+      {{ garage.name }}{% if garage.address %} — {{ garage.address }}{% endif %}{% if garage.phone %} — Tél : {{ garage.phone }}{% endif %}
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -28,4 +28,5 @@ urlpatterns = [
     path("visites/", include("technical_visits.urls")),
     path("assurances/", include("insurance.urls")),
     path("taxes/", include("taxes.urls")),
+    path("ateliers/", include("workshops.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

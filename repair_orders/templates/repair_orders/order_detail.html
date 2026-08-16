@@ -140,6 +140,90 @@
       {% endif %}
     </div>
 
+    <!-- ═══════════════════ INTERVENTIONS PAR SECTION ═══════════════════ -->
+    {% if section_breakdown %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Interventions par section</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for item in section_breakdown %}
+        <details class="group border border-gray-200 rounded-xl overflow-hidden">
+          <summary class="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors list-none">
+            {% if item.section %}
+            <span class="text-xl" aria-hidden>{{ item.section.icon|default:"🔧" }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-[#1A1A1A]" style="color:{{ item.section.color }}">{{ item.section.name }}</span>
+                <span class="text-xs text-gray-400">({{ item.task_count }} tâche{{ item.task_count|pluralize }})</span>
+              </div>
+              <div class="flex gap-3 mt-1 text-xs text-gray-500">
+                {% if item.done_count < item.task_count %}
+                <span class="text-orange-600">{{ item.done_count }}/{{ item.task_count }} terminé{{ item.done_count|pluralize }}</span>
+                {% else %}
+                <span class="text-green-600">✓ Toutes terminées</span>
+                {% endif %}
+              </div>
+            </div>
+            {% else %}
+            <span class="text-xl">📋</span>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm text-gray-500">Non attribué</div>
+              <div class="text-xs text-gray-400">{{ item.task_count }} tâche{{ item.task_count|pluralize }}</div>
+            </div>
+            {% endif %}
+            <div class="text-right flex-shrink-0">
+              <div class="font-black text-base text-[#1A1A1A]">{{ item.total }} <span class="text-xs font-normal text-gray-400">FCFA</span></div>
+              <svg class="h-4 w-4 text-gray-400 ml-auto group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+          </summary>
+          <!-- Détail de la section -->
+          <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
+            <div class="grid grid-cols-3 gap-2 mb-3 text-xs">
+              <div class="text-center">
+                <div class="text-gray-400">Main d'œuvre</div>
+                <div class="font-bold text-[#1A1A1A]">{{ item.labor }} FCFA</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-400">Pièces</div>
+                <div class="font-bold text-[#1A1A1A]">{{ item.parts }} FCFA</div>
+              </div>
+              <div class="text-center">
+                <div class="text-gray-400">Total</div>
+                <div class="font-black text-[#7A5C00]">{{ item.total }} FCFA</div>
+              </div>
+            </div>
+            {% if item.mechanics %}
+            <p class="text-xs text-gray-500 mb-2">
+              Techniciens :
+              {% for m in item.mechanics %}{{ m.get_full_name|default:m.username }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </p>
+            {% endif %}
+            {% if item.tasks %}
+            <div class="space-y-1">
+              {% for task in item.tasks %}
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-gray-700">{% if task.is_done %}✓{% else %}○{% endif %} {{ task.description }}</span>
+                <span class="font-semibold text-gray-600 flex-shrink-0 ml-2">{{ task.cost }} FCFA</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if item.parts_list %}
+            <div class="mt-2 pt-2 border-t border-gray-200 space-y-1">
+              {% for op in item.parts_list %}
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-gray-600">{{ op.quantity }}× {{ op.part.name }}</span>
+                <span class="font-semibold text-gray-600 flex-shrink-0 ml-2">{{ op.line_total }} FCFA</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Tâches main d'œuvre -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
       <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Tâches de main d'œuvre</h3>
@@ -148,6 +232,7 @@
         <thead>
           <tr class="text-xs text-gray-400 border-b">
             <th class="pb-2 text-left">Description</th>
+            <th class="pb-2 text-left">Section</th>
             <th class="pb-2 text-left">Mécanicien</th>
             <th class="pb-2 text-right">Coût</th>
             <th class="pb-2 text-center">Fait</th>
@@ -158,6 +243,13 @@
           {% for task in order.tasks.all %}
           <tr>
             <td class="py-2 text-gray-700">{{ task.description }}</td>
+            <td class="py-2">
+              {% if task.section %}
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style="background:{{ task.section.color }}">{{ task.section.name }}</span>
+              {% else %}
+              <span class="text-xs text-gray-400">—</span>
+              {% endif %}
+            </td>
             <td class="py-2 text-gray-500 text-xs">{% if task.mechanic %}{{ task.mechanic.get_full_name|default:task.mechanic.username }}{% else %}—{% endif %}</td>
             <td class="py-2 text-right font-semibold">{{ task.cost }} FCFA</td>
             <td class="py-2 text-center">{% if task.is_done %}<span class="text-green-600 font-bold">✓</span>{% else %}<span class="text-gray-300">○</span>{% endif %}</td>
@@ -178,9 +270,12 @@
           {% csrf_token %}
           <div class="grid grid-cols-2 gap-3">
             {% for field in task_form %}
-            <div class="{% if field.name == 'description' %}col-span-2{% endif %}">
-              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ field.label }}</label>
+            <div class="{% if field.name == 'description' or field.name == 'section' %}col-span-2{% endif %}">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">
+                {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+              </label>
               {{ field }}
+              {% if field.errors %}<p class="text-red-500 text-xs mt-0.5">{{ field.errors|join:", " }}</p>{% endif %}
             </div>
             {% endfor %}
           </div>
@@ -199,6 +294,7 @@
         <thead>
           <tr class="text-xs text-gray-400 border-b">
             <th class="pb-2 text-left">Pièce</th>
+            <th class="pb-2 text-left">Section</th>
             <th class="pb-2 text-center">Qté</th>
             <th class="pb-2 text-right">Prix u.</th>
             <th class="pb-2 text-right">Total</th>
@@ -211,6 +307,13 @@
             <td class="py-2">
               <span class="font-semibold text-[#1A1A1A]">{{ op.part.name }}</span>
               <span class="text-xs text-gray-400 ml-1">({{ op.part.reference }})</span>
+            </td>
+            <td class="py-2">
+              {% if op.section %}
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-full text-white" style="background:{{ op.section.color }}">{{ op.section.name }}</span>
+              {% else %}
+              <span class="text-xs text-gray-400">—</span>
+              {% endif %}
             </td>
             <td class="py-2 text-center font-semibold">{{ op.quantity }}</td>
             <td class="py-2 text-right text-gray-600">{{ op.unit_price }} FCFA</td>
@@ -232,10 +335,13 @@
           {% csrf_token %}
           <div class="grid grid-cols-2 gap-3">
             {% for field in part_form %}
-            <div class="{% if field.name == 'part' %}col-span-2{% endif %}">
-              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ field.label }}</label>
+            <div class="{% if field.name == 'part' or field.name == 'section' %}col-span-2{% endif %}">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">
+                {{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}
+              </label>
               {{ field }}
               {% if field.help_text %}<p class="text-xs text-gray-400 mt-0.5">{{ field.help_text }}</p>{% endif %}
+              {% if field.errors %}<p class="text-red-500 text-xs mt-0.5">{{ field.errors|join:", " }}</p>{% endif %}
             </div>
             {% endfor %}
           </div>
@@ -245,6 +351,54 @@
         </form>
       </details>
     </div>
+
+    <!-- ═══════════════════ DIAGNOSTICS & SCANS ═══════════════════ -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          Diagnostics & Scans
+          <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ diagnostic_reports|length }}</span>
+        </h3>
+        <a href="{% url 'diagnostic_create' order.pk %}"
+           class="text-xs bg-[#FFCD11] text-[#1A1A1A] font-bold px-3 py-1.5 rounded-lg hover:bg-[#E6B800] transition-colors">
+          + Nouveau diagnostic
+        </a>
+      </div>
+      {% if diagnostic_reports %}
+      <div class="space-y-3">
+        {% for diag in diagnostic_reports %}
+        <div class="border border-gray-100 rounded-lg p-4 hover:border-[#FFCD11] hover:bg-[#FFFBE0] transition-colors">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-mono font-black text-sm text-[#1A1A1A]">{{ diag.reference }}</span>
+                <span class="text-xs text-gray-400">{{ diag.scan_date|date:"d/m/Y H:i" }}</span>
+                {% if diag.dtc_count %}
+                <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ diag.dtc_count }} DTC</span>
+                {% else %}
+                <span class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">0 DTC</span>
+                {% endif %}
+              </div>
+              {% if diag.scanner_name %}<p class="text-xs text-gray-500 mt-1">🔌 {{ diag.scanner_name }}</p>{% endif %}
+              {% if diag.technician %}<p class="text-xs text-gray-500">👤 {{ diag.technician.get_full_name|default:diag.technician.username }}</p>{% endif %}
+              {% if diag.summary %}<p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ diag.summary|truncatechars:100 }}</p>{% endif %}
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <a href="{% url 'diagnostic_detail' diag.pk %}" class="text-xs border border-gray-300 text-gray-700 px-2 py-1 rounded hover:bg-gray-50">Voir</a>
+              <a href="{% url 'diagnostic_print' diag.pk %}" target="_blank" class="text-xs border border-[#FFCD11] text-[#7A5C00] px-2 py-1 rounded hover:bg-[#FFFBE0]">🖨</a>
+              {% if diag.original_file %}
+              <a href="{{ diag.original_file.url }}" target="_blank" class="text-xs border border-gray-300 text-gray-600 px-2 py-1 rounded hover:bg-gray-50">⬇</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">Aucun diagnostic enregistré.</p>
+      {% endif %}
+    </div>
+
   </div>
 </div>
 {% endblock %}

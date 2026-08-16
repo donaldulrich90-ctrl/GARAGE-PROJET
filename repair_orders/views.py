@@ -2,12 +2,14 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.db import transaction
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from core.views import GarageRequiredMixin
 from inventory.models import Part, StockMovement
 from invoicing.models import Invoice
+from workshops.services import create_invoice_breakdown, get_order_section_breakdown_list
 
 from .forms import RepairOrderForm, RepairOrderPartForm, RepairOrderTaskForm
 from .models import RepairOrder, RepairOrderPart, RepairOrderTask
@@ -63,6 +65,8 @@ class OrderDetailView(GarageRequiredMixin, DetailView):
             STATUS_NEXT.get(self.object.status), ''
         )
         ctx['invoices'] = self.object.invoices.all()
+        ctx['section_breakdown'] = get_order_section_breakdown_list(self.object)
+        ctx['diagnostic_reports'] = self.object.diagnostic_reports.select_related('technician').prefetch_related('codes').all()
         return ctx
 
 
@@ -153,6 +157,7 @@ class AddPartView(GarageRequiredMixin, View):
                 part=part,
                 quantity=quantity,
                 unit_price=unit_price,
+                section=form.cleaned_data.get('section'),
             )
             part.quantity_in_stock -= quantity
             part.save(update_fields=['quantity_in_stock', 'updated_at'])
@@ -207,6 +212,8 @@ class CreateInvoiceView(GarageRequiredMixin, View):
         if order.invoices.exists():
             messages.warning(request, "Une facture existe déjà pour cet ordre.")
         else:
-            Invoice.objects.create(garage=self.garage, repair_order=order)
+            with transaction.atomic():
+                invoice = Invoice.objects.create(garage=self.garage, repair_order=order)
+                create_invoice_breakdown(invoice)
             messages.success(request, "Facture créée.")
         return redirect('order_detail', pk=pk)

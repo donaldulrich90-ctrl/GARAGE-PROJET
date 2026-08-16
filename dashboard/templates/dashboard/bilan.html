@@ -3,47 +3,213 @@
 {% block page_title %}Bilans & Rapports{% endblock %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<!-- Filtres période -->
-<div class="flex gap-2 mb-6">
+<!-- ═══ FILTRES PÉRIODE ═══ -->
+<div class="flex flex-wrap gap-2 mb-4">
   {% for key, label in periode_choices %}
-  <a href="?periode={{ key }}"
+  {% if key != 'custom' %}
+  <a href="?periode={{ key }}{% if section_filter_id %}&section={{ section_filter_id }}{% endif %}"
      class="px-4 py-2 rounded-lg text-sm font-semibold transition-colors
-            {% if periode == key %}bg-[#FFCD11] text-[#1A1A1A]{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
+            {% if periode == key and not request.GET.date_from %}bg-[#FFCD11] text-[#1A1A1A]{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
     {{ label }}
   </a>
+  {% endif %}
   {% endfor %}
 </div>
 
-<p class="text-xs text-gray-400 mb-5">
+<!-- Période personnalisée + filtre section -->
+<form method="get" class="flex flex-wrap gap-3 mb-5 items-end bg-white border border-gray-200 rounded-xl p-4">
+  <input type="hidden" name="periode" value="custom">
+  <div>
+    <label class="block text-xs font-semibold text-gray-500 mb-1">Date début</label>
+    <input type="date" name="date_from" value="{{ date_from }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-gray-500 mb-1">Date fin</label>
+    <input type="date" name="date_to" value="{{ date_to }}" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-gray-500 mb-1">Section</label>
+    <select name="section" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+      <option value="">Toutes les sections</option>
+      {% for s in all_sections %}
+      <option value="{{ s.pk }}" {% if section_filter_id == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] font-bold px-5 py-2 rounded-lg hover:bg-[#E6B800] transition-colors text-sm">Filtrer</button>
+</form>
+
+<p class="text-xs text-gray-400 mb-6">
   Période : <strong class="text-gray-600">{{ start|date:"d/m/Y" }} → {{ end|date:"d/m/Y" }}</strong>
 </p>
 
-<!-- KPIs principaux -->
+<!-- ═══ KPIs PRINCIPAUX ═══ -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Production facturée</p>
+    <p class="text-2xl font-black text-[#7A5C00]">{{ production|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+  </div>
+  <div class="bg-white rounded-xl border border-green-200 shadow-sm p-5">
     <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Recettes encaissées</p>
-    <p class="text-2xl font-black text-green-700">{{ recettes }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+    <p class="text-2xl font-black text-green-700">{{ recettes|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+  </div>
+  <div class="bg-white rounded-xl border {% if reste > 0 %}border-orange-200{% else %}border-gray-200{% endif %} shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Reste à encaisser</p>
+    <p class="text-2xl font-black {% if reste > 0 %}text-orange-600{% else %}text-gray-500{% endif %}">{{ reste|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+  </div>
+  <div class="bg-white rounded-xl border {% if solde >= 0 %}border-green-200{% else %}border-red-200{% endif %} shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Solde net</p>
+    <p class="text-2xl font-black {% if solde >= 0 %}text-green-700{% else %}text-red-600{% endif %}">{{ solde|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
     <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Dépenses totales</p>
-    <p class="text-2xl font-black text-red-600">{{ depenses_total }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+    <p class="text-2xl font-black text-red-600">{{ depenses_total|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
     <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Salaires / Paie</p>
-    <p class="text-2xl font-black text-orange-600">{{ salaires }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
+    <p class="text-2xl font-black text-orange-600">{{ salaires|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
   </div>
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 {% if solde >= 0 %}border-green-200{% else %}border-red-200{% endif %}">
-    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Solde net</p>
-    <p class="text-2xl font-black {% if solde >= 0 %}text-green-700{% else %}text-red-600{% endif %}">
-      {{ solde }} <span class="text-sm font-semibold text-gray-400">FCFA</span>
-    </p>
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Ordres de réparation</p>
+    <p class="text-2xl font-black text-[#1A1A1A]">{{ orders_total }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+    <p class="text-xs text-gray-400 uppercase font-bold tracking-widest mb-1">Panier moyen</p>
+    <p class="text-2xl font-black text-[#1A1A1A]">{{ panier_moyen|floatformat:0 }} <span class="text-sm font-semibold text-gray-400">FCFA</span></p>
   </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- ═══ PERFORMANCE DES SECTIONS ═══ -->
+{% if section_kpis %}
+<h2 class="text-sm font-black text-[#1A1A1A] uppercase tracking-widest mb-4 mt-8">Performance des sections</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+  {% for kpi in section_kpis %}
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5" style="border-top: 3px solid {% if kpi.section %}{{ kpi.section.color }}{% else %}#9CA3AF{% endif %}">
+    <div class="flex items-center gap-2 mb-3">
+      {% if kpi.section %}
+      <span class="text-xl">{{ kpi.section.icon|default:"🔧" }}</span>
+      <span class="font-bold text-sm text-[#1A1A1A]">{{ kpi.section.name }}</span>
+      {% else %}
+      <span class="text-xl">📋</span>
+      <span class="font-bold text-sm text-gray-500">Non attribué</span>
+      {% endif %}
+    </div>
+    <div class="space-y-2">
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-500">Production facturée</span>
+        <span class="font-bold text-[#1A1A1A]">{{ kpi.production|floatformat:0 }} FCFA</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-500">Encaissé</span>
+        <span class="font-bold text-green-700">{{ kpi.encaisse|floatformat:0 }} FCFA</span>
+      </div>
+      <div class="flex justify-between text-xs border-t border-gray-100 pt-2">
+        <span class="text-gray-500">Reste</span>
+        <span class="font-bold {% if kpi.reste > 0 %}text-orange-600{% else %}text-gray-500{% endif %}">{{ kpi.reste|floatformat:0 }} FCFA</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-400">OR</span>
+        <span class="font-semibold">{{ kpi.or_count }}</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-400">Interventions</span>
+        <span class="font-semibold">{{ kpi.interventions }}</span>
+      </div>
+      <div class="flex justify-between text-xs">
+        <span class="text-gray-400">Part du CA</span>
+        <span class="font-black text-[#7A5C00]">{{ kpi.part_ca }}%</span>
+      </div>
+    </div>
+    {% if kpi.production %}
+    <div class="mt-3 bg-gray-100 rounded-full h-1.5">
+      <div class="h-1.5 rounded-full" style="width:{{ kpi.part_ca }}%;background:{% if kpi.section %}{{ kpi.section.color }}{% else %}#9CA3AF{% endif %}"></div>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
 
-  <!-- Dépenses par catégorie -->
+<!-- Classement des sections -->
+<h2 class="text-sm font-black text-[#1A1A1A] uppercase tracking-widest mb-3">Classement des sections</h2>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8 overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-xs text-gray-400 uppercase border-b bg-gray-50">
+        <th class="px-4 py-3 text-left">Rang</th>
+        <th class="px-4 py-3 text-left">Section</th>
+        <th class="px-4 py-3 text-right">Production</th>
+        <th class="px-4 py-3 text-right">Encaissé</th>
+        <th class="px-4 py-3 text-right">Reste</th>
+        <th class="px-4 py-3 text-center">OR</th>
+        <th class="px-4 py-3 text-center">Interventions</th>
+        <th class="px-4 py-3 text-center">Part CA</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+      {% for kpi in section_kpis %}
+      <tr class="hover:bg-gray-50 transition-colors">
+        <td class="px-4 py-3 font-black text-gray-400 text-center">{{ forloop.counter }}</td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            {% if kpi.section %}
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background:{{ kpi.section.color }}"></span>
+            <span class="font-semibold">{{ kpi.section.name }}</span>
+            {% else %}
+            <span class="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"></span>
+            <span class="text-gray-500">Non attribué</span>
+            {% endif %}
+          </div>
+        </td>
+        <td class="px-4 py-3 text-right font-bold text-[#1A1A1A]">{{ kpi.production|floatformat:0 }} FCFA</td>
+        <td class="px-4 py-3 text-right font-bold text-green-700">{{ kpi.encaisse|floatformat:0 }} FCFA</td>
+        <td class="px-4 py-3 text-right font-bold {% if kpi.reste > 0 %}text-orange-600{% else %}text-gray-400{% endif %}">{{ kpi.reste|floatformat:0 }} FCFA</td>
+        <td class="px-4 py-3 text-center">{{ kpi.or_count }}</td>
+        <td class="px-4 py-3 text-center">{{ kpi.interventions }}</td>
+        <td class="px-4 py-3 text-center">
+          <span class="font-black text-[#7A5C00]">{{ kpi.part_ca }}%</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- ═══ GRAPHIQUES ═══ -->
+{% if chart_labels_json != "[]" or chart_bar_labels_json != "[]" %}
+<h2 class="text-sm font-black text-[#1A1A1A] uppercase tracking-widest mb-4">Graphiques</h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+  <!-- Graphique 1 : Évolution production -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Évolution de la production facturée</h3>
+    <canvas id="chartProduction" height="180"></canvas>
+  </div>
+
+  <!-- Graphique 2 : Évolution encaissements -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Évolution des encaissements</h3>
+    <canvas id="chartPayments" height="180"></canvas>
+  </div>
+
+  <!-- Graphique 3 : Comparaison sections (bar) -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Comparaison production vs encaissements</h3>
+    <canvas id="chartBar" height="180"></canvas>
+  </div>
+
+  <!-- Graphique 4 : Répartition donut -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Répartition de la production</h3>
+    <canvas id="chartDonut" height="180"></canvas>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══ DÉPENSES + OR ═══ -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Dépenses par catégorie</h2>
     {% if depenses_by_cat %}
@@ -52,14 +218,14 @@
         {% for row in depenses_by_cat %}
         <tr>
           <td class="py-2 text-gray-600">{{ row.category }}</td>
-          <td class="py-2 text-right font-bold text-[#1A1A1A]">{{ row.total }} FCFA</td>
+          <td class="py-2 text-right font-bold text-[#1A1A1A]">{{ row.total|floatformat:0 }} FCFA</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot class="border-t">
         <tr>
           <td class="pt-3 font-bold text-[#1A1A1A]">Total</td>
-          <td class="pt-3 text-right font-black text-red-600">{{ depenses_total }} FCFA</td>
+          <td class="pt-3 text-right font-black text-red-600">{{ depenses_total|floatformat:0 }} FCFA</td>
         </tr>
       </tfoot>
     </table>
@@ -68,7 +234,6 @@
     {% endif %}
   </div>
 
-  <!-- Activité des ordres de réparation -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
       Activité OR
@@ -84,29 +249,90 @@
         </tr>
         {% endfor %}
       </tbody>
-      <tfoot class="border-t">
-        <tr>
-          <td class="pt-3 font-bold text-[#1A1A1A]">Total OR reçus</td>
-          <td class="pt-3 text-right font-black text-[#7A5C00]">{{ orders_total }}</td>
-        </tr>
-      </tfoot>
     </table>
     {% else %}
     <p class="text-sm text-gray-400">Aucun OR sur la période.</p>
     {% endif %}
   </div>
-
 </div>
 
-<!-- Résumé texte -->
+<!-- Résumé -->
 <div class="mt-6 bg-[#FFFBE0] border border-[#FFCD11] rounded-xl p-5">
   <p class="text-xs font-bold text-[#7A5C00] uppercase tracking-widest mb-2">Résumé — {{ periode_label }}</p>
   <p class="text-sm text-[#5A4000]">
-    Vous avez encaissé <strong>{{ recettes }} FCFA</strong> pour des dépenses de <strong>{{ depenses_total }} FCFA</strong>
-    (dont <strong>{{ salaires }} FCFA</strong> de salaires), soit un solde net de
-    <strong class="{% if solde >= 0 %}text-green-700{% else %}text-red-600{% endif %}">{{ solde }} FCFA</strong>.
-    {{ orders_total }} ordre(s) de réparation reçu(s) sur la période.
+    Production facturée : <strong>{{ production|floatformat:0 }} FCFA</strong> —
+    Encaissé : <strong>{{ recettes|floatformat:0 }} FCFA</strong> —
+    Reste : <strong class="{% if reste > 0 %}text-orange-700{% else %}text-green-700{% endif %}">{{ reste|floatformat:0 }} FCFA</strong><br>
+    Dépenses : <strong>{{ depenses_total|floatformat:0 }} FCFA</strong> (dont <strong>{{ salaires|floatformat:0 }} FCFA</strong> de salaires) —
+    Solde net : <strong class="{% if solde >= 0 %}text-green-700{% else %}text-red-700{% endif %}">{{ solde|floatformat:0 }} FCFA</strong> —
+    {{ orders_total }} OR — Panier moyen : {{ panier_moyen|floatformat:0 }} FCFA
   </p>
 </div>
 
+<script>
+const chartLabels = {{ chart_labels_json|safe }};
+const chartProductionDatasets = {{ chart_production_datasets_json|safe }};
+const chartPaymentDatasets = {{ chart_payment_datasets_json|safe }};
+const barLabels = {{ chart_bar_labels_json|safe }};
+const barProduction = {{ chart_bar_production_json|safe }};
+const barEncaisse = {{ chart_bar_encaisse_json|safe }};
+const donutLabels = {{ chart_donut_labels_json|safe }};
+const donutData = {{ chart_donut_data_json|safe }};
+const donutColors = {{ chart_donut_colors_json|safe }};
+
+const defaultOpts = {
+  responsive: true,
+  plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+  scales: {
+    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+    y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+  },
+};
+
+if (chartLabels.length && chartProductionDatasets.length) {
+  new Chart(document.getElementById('chartProduction'), {
+    type: 'line',
+    data: { labels: chartLabels, datasets: chartProductionDatasets },
+    options: { ...defaultOpts },
+  });
+  new Chart(document.getElementById('chartPayments'), {
+    type: 'line',
+    data: { labels: chartLabels, datasets: chartPaymentDatasets },
+    options: { ...defaultOpts },
+  });
+}
+
+if (barLabels.length) {
+  new Chart(document.getElementById('chartBar'), {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [
+        { label: 'Production', data: barProduction, backgroundColor: '#FFCD11' },
+        { label: 'Encaissé', data: barEncaisse, backgroundColor: '#22C55E' },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      scales: { x: { grid: { display: false } }, y: { grid: { color: '#F3F4F6' } } },
+    },
+  });
+}
+
+if (donutLabels.length) {
+  new Chart(document.getElementById('chartDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{ data: donutData, backgroundColor: donutColors, hoverOffset: 6 }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      cutout: '65%',
+    },
+  });
+}
+</script>
 {% endblock %}

@@ -230,6 +230,60 @@
   {% endif %}
 </div>
 
+<!-- Historique diagnostics -->
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+      Historique diagnostics
+      <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ vehicle_diagnostics|length }}</span>
+    </h2>
+  </div>
+  {% if vehicle_diagnostics %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-400 uppercase border-b">
+          <th class="pb-2 text-left">Date</th>
+          <th class="pb-2 text-left">Kilométrage</th>
+          <th class="pb-2 text-left">OR</th>
+          <th class="pb-2 text-center">DTC</th>
+          <th class="pb-2 text-left">Technicien</th>
+          <th class="pb-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for diag in vehicle_diagnostics %}
+        <tr class="border-b border-gray-50 last:border-0 hover:bg-[#FFFBE0] transition-colors">
+          <td class="py-2 text-sm">{{ diag.scan_date|date:"d/m/Y H:i" }}</td>
+          <td class="py-2">{{ diag.mileage|default:"—" }}{% if diag.mileage %} km{% endif %}</td>
+          <td class="py-2">
+            <a href="{% url 'order_detail' diag.repair_order.pk %}" class="font-mono text-[#7A5C00] hover:underline text-xs font-black">{{ diag.repair_order.reference }}</a>
+          </td>
+          <td class="py-2 text-center">
+            {% if diag.dtc_count %}
+            <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-0.5 rounded-full">{{ diag.dtc_count }}</span>
+            {% else %}
+            <span class="text-gray-400 text-xs">0</span>
+            {% endif %}
+          </td>
+          <td class="py-2 text-xs text-gray-500">{{ diag.technician.get_full_name|default:diag.technician.username|default:"—" }}</td>
+          <td class="py-2 text-right flex items-center justify-end gap-1">
+            <a href="{% url 'diagnostic_detail' diag.pk %}" class="text-[#7A5C00] text-xs hover:underline border border-gray-200 px-2 py-1 rounded">Voir</a>
+            <a href="{% url 'diagnostic_print' diag.pk %}" target="_blank" class="text-xs border border-[#FFCD11] text-[#7A5C00] px-2 py-1 rounded hover:bg-[#FFFBE0]">🖨</a>
+            {% if diag.original_file %}
+            <a href="{{ diag.original_file.url }}" target="_blank" class="text-xs border border-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-50">⬇</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400">Aucun diagnostic enregistré pour ce véhicule.</p>
+  {% endif %}
+</div>
+
 <!-- Assurances -->
 <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
   <div class="flex items-center justify-between mb-4">
