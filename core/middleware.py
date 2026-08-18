@@ -18,5 +18,11 @@ class AuditMiddleware:
     def __call__(self, request):
         _thread_locals.user = getattr(request, "user", None)
         _thread_locals.request = request
-        response = self.get_response(request)
-        return response
+        try:
+            return self.get_response(request)
+        finally:
+            # Nettoyer le thread-local en fin de requête : évite qu'un utilisateur
+            # (ou une requête) ne « fuite » sur la requête suivante servie par le
+            # même thread — ce qui fausserait l'attribution des entrées d'audit.
+            _thread_locals.user = None
+            _thread_locals.request = None
