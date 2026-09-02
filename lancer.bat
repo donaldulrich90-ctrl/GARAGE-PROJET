@@ -11,17 +11,30 @@ echo.
 
 :: Creer l'environnement virtuel si absent
 if not exist "venv\Scripts\python.exe" (
-    echo  [1/3] Creation de l'environnement virtuel...
+    echo  [1/4] Creation de l'environnement virtuel...
     python -m venv venv
-    echo  [2/3] Installation des dependances ^(patientez^)...
-    venv\Scripts\pip install -r requirements.txt --quiet
 )
 
-:: Initialiser la base de donnees si absente
-if not exist "db.sqlite3" (
-    echo  [3/3] Initialisation de la base de donnees...
-    venv\Scripts\python manage.py migrate
+echo  [2/4] Verification des dependances ^(patientez^)...
+venv\Scripts\python -m pip install -r requirements.txt --quiet
+if errorlevel 1 goto :error
+
+:: Le lanceur Windows utilise le mode local et SQLite par defaut.
+set "DJANGO_DEBUG=True"
+
+set "GARAGE_DB_NOUVELLE=0"
+if not exist "db.sqlite3" set "GARAGE_DB_NOUVELLE=1"
+
+echo  [3/4] Mise a jour de la base de donnees...
+venv\Scripts\python manage.py migrate --noinput
+if errorlevel 1 goto :error
+
+if "%GARAGE_DB_NOUVELLE%"=="1" (
+    echo  [4/4] Creation des donnees de demonstration...
     venv\Scripts\python manage.py shell < seed_demo.py
+    if errorlevel 1 goto :error
+) else (
+    echo  [4/4] Base existante conservee.
 )
 
 echo.
@@ -45,3 +58,10 @@ venv\Scripts\python manage.py runserver
 
 echo.
 pause
+exit /b 0
+
+:error
+echo.
+echo  Une erreur a interrompu le lancement. Consultez le message ci-dessus.
+pause
+exit /b 1

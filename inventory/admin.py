@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from core.admin import TenantScopedAdmin
 from .models import (
-    Part, StockMovement, Supplier, SupplierOrder, SupplierOrderLine,
+    Part, StockMovement, Supplier, SupplierExpense, SupplierOrder, SupplierOrderLine,
     SupplierPart, SupplierStockMovement,
 )
 
@@ -11,6 +11,13 @@ from .models import (
 class SupplierAdmin(TenantScopedAdmin, admin.ModelAdmin):
     list_display = ("name", "is_faest", "phone", "garage")
     list_filter = ("is_faest", "garage")
+
+
+@admin.register(SupplierExpense)
+class SupplierExpenseAdmin(admin.ModelAdmin):
+    list_display = ("date", "supplier", "category", "amount", "payment_method", "recorded_by")
+    list_filter = ("category", "payment_method", "supplier")
+    search_fields = ("supplier__name", "description", "reference")
 
 
 @admin.register(Part)
@@ -42,7 +49,7 @@ class SupplierPartAdmin(TenantScopedAdmin, admin.ModelAdmin):
 
 @admin.register(SupplierStockMovement)
 class SupplierStockMovementAdmin(admin.ModelAdmin):
-    list_display = ("supplier_part", "movement_type", "quantity", "unit_price", "destination_garage", "created_at")
+    list_display = ("sale_reference", "supplier_part", "movement_type", "quantity", "unit_price", "customer_name", "destination_garage", "created_at")
     list_filter = ("movement_type", "supplier_part__supplier")
     search_fields = ("supplier_part__catalog_part__name",)
 

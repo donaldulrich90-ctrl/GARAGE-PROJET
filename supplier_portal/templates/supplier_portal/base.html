@@ -1,9 +1,11 @@
+{% load bilingual i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Portail fournisseur{% endblock %} — {{ request.user.supplier.name }}</title>
+  <title>{% block title %}{% tr "Portail fournisseur" "Supplier portal" %}{% endblock %} — {{ request.user.supplier.name }}</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -12,36 +14,63 @@
   {% with n=request.resolver_match.url_name %}
   <aside id="sp-sidebar" class="w-60 bg-[#1A1A1A] text-white p-4 flex flex-col fixed md:static h-full md:h-auto z-30 -translate-x-full md:translate-x-0 transition-transform duration-200">
     <div class="pb-4 border-b border-gray-700 mb-4">
-      <div class="text-xs uppercase text-[#FFCD11] tracking-widest font-bold">Fournisseur</div>
-      <div class="text-lg font-black mt-1">{{ request.user.supplier.name }}</div>
+      <div class="flex items-center gap-3">
+        {% if request.user.supplier.logo %}
+          <img src="{{ request.user.supplier.logo.url }}" alt="Logo {{ request.user.supplier.name }}" class="w-12 h-12 rounded-lg object-contain bg-white p-1">
+        {% else %}
+          <div class="w-12 h-12 rounded-lg bg-[#FFCD11] text-[#1A1A1A] flex items-center justify-center font-black text-lg">{{ request.user.supplier.name|slice:":1"|upper }}</div>
+        {% endif %}
+        <div class="min-w-0">
+          <div class="text-xs uppercase text-[#FFCD11] tracking-widest font-bold">{% tr "Fournisseur" "Supplier" %}</div>
+          <div class="text-lg font-black mt-1 truncate">{{ request.user.supplier.name }}</div>
+        </div>
+      </div>
     </div>
     <nav class="flex flex-col gap-1 text-sm flex-1">
       <a href="{% url 'supplier_portal:dashboard' %}"
          class="px-3 py-2.5 rounded-lg {% if n == 'dashboard' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
-        Tableau de bord
+        {% tr "Tableau de bord" "Dashboard" %}
       </a>
       <a href="{% url 'supplier_portal:order_list' %}"
          class="px-3 py-2.5 rounded-lg {% if 'order' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
-        Commandes reçues
+        {% tr "Commandes reçues" "Received orders" %}{% if supplier_pending_order_count %}<span class="float-right bg-red-600 text-white text-[10px] px-1.5 rounded-full">{{ supplier_pending_order_count }}</span>{% endif %}
       </a>
       <a href="{% url 'supplier_portal:offer_list' %}"
          class="px-3 py-2.5 rounded-lg {% if 'offer' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
-        Mes pièces
+        {% tr "Mes pièces" "My parts" %}{% if supplier_low_stock_count %}<span class="float-right bg-red-600 text-white text-[10px] px-1.5 rounded-full">{{ supplier_low_stock_count }}</span>{% endif %}
       </a>
       <a href="{% url 'supplier_portal:movement_list' %}"
          class="px-3 py-2.5 rounded-lg {% if 'movement' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
-        Mouvements de stock
+        {% tr "Mouvements de stock" "Stock movements" %}
+      </a>
+      <a href="{% url 'supplier_portal:sale_list' %}"
+         class="px-3 py-2.5 rounded-lg {% if 'sale' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Ventes détaillées" "Detailed sales" %}
+      </a>
+      <a href="{% url 'supplier_portal:expense_list' %}"
+         class="px-3 py-2.5 rounded-lg {% if 'expense' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Dépenses" "Expenses" %}
+      </a>
+      <a href="{% url 'supplier_portal:report' %}"
+         class="px-3 py-2.5 rounded-lg {% if 'report' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Rapports" "Reports" %}
       </a>
       <a href="{% url 'supplier_portal:profile' %}"
          class="px-3 py-2.5 rounded-lg {% if n == 'profile' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
-        Mon profil
+        {% tr "Mon profil" "My profile" %}
       </a>
     </nav>
     <div class="pt-4 border-t border-gray-700 mt-4">
       <div class="text-xs text-gray-400">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <form action="{% url 'set_language' %}" method="post" class="mt-3 flex gap-1" aria-label="{% tr 'Choisir la langue' 'Choose language' %}">
+        {% csrf_token %}
+        <input name="next" type="hidden" value="{{ request.get_full_path }}">
+        <button name="language" value="fr" type="submit" class="px-2 py-1 rounded text-xs {% if LANGUAGE_CODE == 'fr' %}bg-[#FFCD11] text-[#1A1A1A] font-bold{% else %}bg-gray-700 text-gray-300{% endif %}">FR</button>
+        <button name="language" value="en" type="submit" class="px-2 py-1 rounded text-xs {% if LANGUAGE_CODE == 'en' %}bg-[#FFCD11] text-[#1A1A1A] font-bold{% else %}bg-gray-700 text-gray-300{% endif %}">EN</button>
+      </form>
       <form method="post" action="{% url 'logout' %}" class="mt-2">
         {% csrf_token %}
-        <button type="submit" class="text-xs text-gray-400 hover:text-white">Déconnexion</button>
+        <button type="submit" class="text-xs text-gray-400 hover:text-white">{% tr "Déconnexion" "Sign out" %}</button>
       </form>
     </div>
   </aside>

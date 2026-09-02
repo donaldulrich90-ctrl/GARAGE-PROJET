@@ -1,33 +1,34 @@
 {% extends "supplier_portal/base.html" %}
-{% block title %}Commandes reçues{% endblock %}
-{% block page_title %}Commandes reçues{% endblock %}
+{% load bilingual %}
+{% block title %}{% tr "Commandes reçues" "Received orders" %}{% endblock %}
+{% block page_title %}{% tr "Commandes reçues" "Received orders" %}{% endblock %}
 
 {% block content %}
 {% if pending_count %}
 <div class="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-  <strong>{{ pending_count }} commande(s)</strong> en attente de votre validation.
+  <strong>{{ pending_count }} {% tr "commande(s)" "order(s)" %}</strong> {% tr "en attente de votre validation." "awaiting your approval." %}
 </div>
 {% endif %}
 
 <form method="get" class="mb-4 flex gap-3">
   <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-    <option value="">Tous les statuts</option>
+    <option value="">{% tr "Tous les statuts" "All statuses" %}</option>
     {% for val, label in statuses %}
       <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
-  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">Filtrer</button>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">{% tr "Filtrer" "Filter" %}</button>
 </form>
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
-        <th class="px-4 py-3 text-left">Référence</th>
+        <th class="px-4 py-3 text-left">{% tr "Référence" "Reference" %}</th>
         <th class="px-4 py-3 text-left">Garage</th>
-        <th class="px-4 py-3 text-left">Statut</th>
-        <th class="px-4 py-3 text-right">Total (FCFA)</th>
-        <th class="px-4 py-3 text-left">Reçue le</th>
+        <th class="px-4 py-3 text-left">{% tr "Statut" "Status" %}</th>
+        <th class="px-4 py-3 text-right">{% tr "Total (FCFA)" "Total (FCFA)" %}</th>
+        <th class="px-4 py-3 text-left">{% tr "Reçue le" "Received on" %}</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-50">
@@ -44,13 +45,13 @@
             {% elif order.status == 'shipped' %}bg-yellow-50 text-yellow-800
             {% elif order.status == 'delivered' %}bg-emerald-50 text-emerald-800
             {% elif order.status == 'rejected' %}bg-red-50 text-red-800
-            {% else %}bg-gray-100 text-gray-500{% endif %}">{{ order.get_status_display }}</span>
+            {% else %}bg-gray-100 text-gray-500{% endif %}">{{ order.status|supplier_order_status_label }}</span>
         </td>
         <td class="px-4 py-3 text-right font-bold">{{ order.total_amount|floatformat:0 }}</td>
-        <td class="px-4 py-3 text-xs text-gray-500">{{ order.submitted_at|date:"d/m/Y H:i"|default:"—" }}</td>
+        <td class="px-4 py-3 text-xs text-gray-500">{{ order.submitted_at|date:"SHORT_DATETIME_FORMAT"|default:"—" }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">Aucune commande reçue.</td></tr>
+      <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">{% tr "Aucune commande reçue." "No orders received." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

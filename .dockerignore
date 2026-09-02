@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.sqlite3
+*.sqlite3-journal
+.env
+media
+staticfiles
+tests-output

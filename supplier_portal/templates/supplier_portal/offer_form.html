@@ -1,6 +1,7 @@
 {% extends "supplier_portal/base.html" %}
-{% block title %}{% if form.instance.pk %}Modifier ma pièce{% else %}Ajouter une pièce{% endif %}{% endblock %}
-{% block page_title %}{% if form.instance.pk %}Modifier ma pièce{% else %}Nouvelle pièce en stock{% endif %}{% endblock %}
+{% load bilingual %}
+{% block title %}{% if form.instance.pk %}{% tr "Modifier ma pièce" "Edit my part" %}{% else %}{% tr "Ajouter une pièce" "Add a part" %}{% endif %}{% endblock %}
+{% block page_title %}{% if form.instance.pk %}{% tr "Modifier ma pièce" "Edit my part" %}{% else %}{% tr "Nouvelle pièce en stock" "New stock item" %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl bg-white rounded-xl border border-gray-200 p-6">
@@ -19,8 +20,8 @@
       {% endfor %}
     </div>
     <div class="pt-4 border-t border-gray-100 mt-4 flex gap-3">
-      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#E6B800]">Enregistrer</button>
-      <a href="{% url 'supplier_portal:offer_list' %}" class="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">Annuler</a>
+      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#E6B800]">{% tr "Enregistrer" "Save" %}</button>
+      <a href="{% url 'supplier_portal:offer_list' %}" class="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">{% tr "Annuler" "Cancel" %}</a>
     </div>
   </form>
 </div>

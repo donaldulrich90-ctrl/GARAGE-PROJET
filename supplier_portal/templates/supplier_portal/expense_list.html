@@ -1,0 +1,32 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Dépenses" "Expenses" %}{% endblock %}
+{% block page_title %}{% tr "Dépenses du fournisseur" "Supplier expenses" %}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'supplier_portal:expense_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">+ {% tr "Nouvelle dépense" "New expense" %}</a>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-gray-200 rounded-xl p-5 mb-5 max-w-sm"><div class="text-xs uppercase text-gray-400">{% tr "Total des dépenses filtrées" "Filtered expense total" %}</div><div class="text-2xl font-black mt-2 text-red-700">{{ expense_total|floatformat:0 }} FCFA</div></div>
+<form method="get" class="mb-4 flex flex-col sm:flex-row gap-3">
+  <select name="period" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    {% for value, label in period_choices %}<option value="{{ value }}" {% if period == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    <option value="">{% tr "Toutes les catégories" "All categories" %}</option>
+    {% for value, label in categories %}<option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm font-semibold">{% tr "Filtrer" "Filter" %}</button>
+</form>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+  <table class="w-full text-sm min-w-[760px]">
+    <thead><tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider"><th class="px-4 py-3 text-left">{% tr "Date" "Date" %}</th><th class="px-4 py-3 text-left">{% tr "Catégorie" "Category" %}</th><th class="px-4 py-3 text-left">{% tr "Description / Référence" "Description / Reference" %}</th><th class="px-4 py-3 text-left">{% tr "Paiement" "Payment" %}</th><th class="px-4 py-3 text-right">{% tr "Montant" "Amount" %}</th><th class="px-4 py-3"></th></tr></thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for expense in expenses %}
+      <tr class="hover:bg-[#FFFBE0]"><td class="px-4 py-3">{{ expense.date|date:"SHORT_DATE_FORMAT" }}</td><td class="px-4 py-3">{{ expense.category|expense_category_label }}</td><td class="px-4 py-3"><div class="font-medium">{{ expense.description }}</div><div class="text-xs text-gray-400">{{ expense.reference|default:"—" }}{% if expense.receipt %} · <a href="{{ expense.receipt.url }}" class="text-blue-600">{% tr "Justificatif" "Receipt" %}</a>{% endif %}</div></td><td class="px-4 py-3">{{ expense.payment_method|payment_label }}</td><td class="px-4 py-3 text-right font-black text-red-700">{{ expense.amount|floatformat:0 }}</td><td class="px-4 py-3 text-right"><a href="{% url 'supplier_portal:expense_update' expense.pk %}" class="text-[#7A5C00] text-xs font-semibold">{% tr "Modifier" "Edit" %}</a><a href="{% url 'supplier_portal:expense_delete' expense.pk %}" class="text-red-600 text-xs font-semibold ml-3">{% tr "Supprimer" "Delete" %}</a></td></tr>
+      {% empty %}<tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">{% tr "Aucune dépense pour cette période." "No expenses for this period." %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

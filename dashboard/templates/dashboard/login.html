@@ -1,9 +1,11 @@
+{% load bilingual i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion — Garage SaaS</title>
+  <title>{% tr "Connexion" "Sign in" %} — Garage SaaS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     input[type="text"], input[type="password"] {
@@ -27,6 +29,13 @@
 
   <div class="relative z-10 w-full max-w-md">
 
+    <form action="{% url 'set_language' %}" method="post" class="mb-4 flex justify-end gap-1">
+      {% csrf_token %}
+      <input name="next" type="hidden" value="{{ request.get_full_path }}">
+      <button name="language" value="fr" type="submit" class="px-3 py-1 rounded text-xs {% if LANGUAGE_CODE == 'fr' %}bg-[#FFCD11] text-[#1A1A1A] font-bold{% else %}bg-gray-700 text-gray-300{% endif %}">FR</button>
+      <button name="language" value="en" type="submit" class="px-3 py-1 rounded text-xs {% if LANGUAGE_CODE == 'en' %}bg-[#FFCD11] text-[#1A1A1A] font-bold{% else %}bg-gray-700 text-gray-300{% endif %}">EN</button>
+    </form>
+
     <!-- Logo / marque -->
     <div class="text-center mb-8">
       <div class="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[#FFCD11] mb-4 shadow-lg">
@@ -36,12 +45,12 @@
         </svg>
       </div>
       <h1 class="text-2xl font-black text-white tracking-tight">GARAGE SAAS</h1>
-      <p class="text-gray-500 text-sm mt-1">Gestion de garage automobile</p>
+      <p class="text-gray-500 text-sm mt-1">{% tr "Gestion de garage automobile" "Automotive garage management" %}</p>
     </div>
 
     <!-- Carte de connexion -->
     <div class="bg-white rounded-2xl shadow-2xl p-8">
-      <h2 class="text-lg font-bold text-[#1A1A1A] mb-6">Connexion à votre espace</h2>
+      <h2 class="text-lg font-bold text-[#1A1A1A] mb-6">{% tr "Connexion à votre espace" "Sign in to your account" %}</h2>
 
       {% if form.non_field_errors %}
       <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -64,13 +73,13 @@
 
         <button type="submit"
                 class="mt-6 w-full bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-3 rounded-xl text-sm tracking-wide transition-colors shadow-sm">
-          Se connecter →
+          {% tr "Se connecter" "Sign in" %} →
         </button>
       </form>
     </div>
 
     <p class="text-center text-gray-600 text-xs mt-6">
-      Garage SaaS — ERP multi-tenant pour garages automobiles
+      Garage SaaS — {% tr "ERP multi-tenant pour garages automobiles" "multi-tenant ERP for automotive garages" %}
     </p>
   </div>
 

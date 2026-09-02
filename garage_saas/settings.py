@@ -21,12 +21,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sxw)j-_$tx%b-t$$3j1k=sq$^@xd3-sz9#$3_uuo=o2v+z0g+o'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "dev-only-local-key-4zV9pQ7mN2xK8cR6sT3wY5aH1jF0bL9uE7dG2vC8",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -65,6 +72,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -86,6 +94,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'dashboard.context_processors.stock_alerts',
+                'supplier_portal.context_processors.supplier_alerts',
             ],
         },
     },
@@ -97,16 +106,24 @@ WSGI_APPLICATION = 'garage_saas.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'garage_saas',
-        'USER': 'donald',
-        'PASSWORD': 'VUbIaTyp7PhDFmUttZukyeIjvFtoeScNmNEeLeMgdr7qLoOP1zKvUElyny3PGLRg',
-        'HOST': 'j79xd3zy0rm4is01vfn818bq',
-        'PORT': '5432',
+if os.environ.get("POSTGRES_DB"):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ["POSTGRES_DB"],
+            "USER": os.environ.get("POSTGRES_USER", ""),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -131,7 +148,15 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'fr-fr'
+LANGUAGE_CODE = 'fr'
+
+LANGUAGES = [
+    ('fr', 'Français'),
+    ('en', 'English'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']
+LANGUAGE_COOKIE_SAMESITE = 'Lax'
 
 TIME_ZONE = 'Africa/Ouagadougou'
 
@@ -143,7 +168,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -163,7 +188,32 @@ STORAGES = {
     },
 }
 
-CSRF_TRUSTED_ORIGINS = ['https://gegarage.duckdns.org']
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+# Conserver le type de clé primaire déjà utilisé par les migrations existantes.
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+LANGUAGE_COOKIE_SECURE = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_SSL_REDIRECT = os.environ.get(
+    "DJANGO_SECURE_SSL_REDIRECT",
+    "False" if DEBUG else "True",
+).lower() in ("1", "true", "yes")
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "0"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "False"
+).lower() in ("1", "true", "yes")
+SECURE_HSTS_PRELOAD = os.environ.get(
+    "DJANGO_SECURE_HSTS_PRELOAD", "False"
+).lower() in ("1", "true", "yes")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # --- Commission plateforme ---
 # Taux de commission par defaut preleve sur chaque commande fournisseur validee.

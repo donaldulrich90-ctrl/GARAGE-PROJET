@@ -7,6 +7,7 @@ from django.urls import include, path
 from accounts.views import post_login_redirect
 
 urlpatterns = [
+    path("i18n/", include("django.conf.urls.i18n")),
     path("admin/", admin.site.urls),
     path("login/", auth_views.LoginView.as_view(template_name="dashboard/login.html"), name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),

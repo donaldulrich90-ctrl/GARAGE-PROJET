@@ -1,44 +1,45 @@
 {% extends "supplier_portal/base.html" %}
-{% block title %}Mouvements de stock{% endblock %}
-{% block page_title %}Mouvements de stock{% endblock %}
+{% load bilingual %}
+{% block title %}{% tr "Mouvements de stock" "Stock movements" %}{% endblock %}
+{% block page_title %}{% tr "Mouvements de stock" "Stock movements" %}{% endblock %}
 {% block header_actions %}
-  <a href="{% url 'supplier_portal:movement_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">+ Nouveau mouvement</a>
+  <a href="{% url 'supplier_portal:movement_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">+ {% tr "Nouveau mouvement" "New movement" %}</a>
 {% endblock %}
 
 {% block content %}
 <form method="get" class="mb-4 flex gap-3">
   <select name="type" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-    <option value="">Tous les types</option>
+    <option value="">{% tr "Tous les types" "All types" %}</option>
     {% for val, label in types %}
       <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
-  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">Filtrer</button>
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] font-semibold">{% tr "Filtrer" "Filter" %}</button>
 </form>
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead>
       <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
-        <th class="px-4 py-3 text-left">Date</th>
-        <th class="px-4 py-3 text-left">Type</th>
-        <th class="px-4 py-3 text-left">Pièce</th>
-        <th class="px-4 py-3 text-right">Quantité</th>
-        <th class="px-4 py-3 text-right">Prix appliqué</th>
-        <th class="px-4 py-3 text-left">Destinataire / Raison</th>
+        <th class="px-4 py-3 text-left">{% tr "Date" "Date" %}</th>
+        <th class="px-4 py-3 text-left">{% tr "Type" "Type" %}</th>
+        <th class="px-4 py-3 text-left">{% tr "Pièce" "Part" %}</th>
+        <th class="px-4 py-3 text-right">{% tr "Quantité" "Quantity" %}</th>
+        <th class="px-4 py-3 text-right">{% tr "Prix appliqué" "Applied price" %}</th>
+        <th class="px-4 py-3 text-left">{% tr "Destinataire / Raison" "Recipient / Reason" %}</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-50">
       {% for mv in movements %}
       <tr class="hover:bg-[#FFFBE0]">
-        <td class="px-4 py-3 text-xs text-gray-500">{{ mv.created_at|date:"d/m/Y H:i" }}</td>
+        <td class="px-4 py-3 text-xs text-gray-500">{{ mv.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
         <td class="px-4 py-3">
           {% if mv.movement_type == 'in' %}
-            <span class="text-xs bg-green-50 text-green-800 px-2 py-0.5 rounded-full font-semibold">Entrée</span>
+            <span class="text-xs bg-green-50 text-green-800 px-2 py-0.5 rounded-full font-semibold">{% tr "Entrée" "Incoming" %}</span>
           {% elif mv.movement_type == 'out' %}
-            <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">Sortie</span>
+            <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">{% tr "Sortie" "Outgoing" %}</span>
           {% else %}
-            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-semibold">Ajustement</span>
+            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-semibold">{% tr "Ajustement" "Adjustment" %}</span>
           {% endif %}
         </td>
         <td class="px-4 py-3">
@@ -57,7 +58,7 @@
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Aucun mouvement enregistré.</td></tr>
+      <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">{% tr "Aucun mouvement enregistré." "No stock movements recorded." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

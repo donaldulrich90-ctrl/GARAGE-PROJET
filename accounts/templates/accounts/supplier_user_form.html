@@ -1,0 +1,55 @@
+{% extends "dashboard/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Créer un compte fournisseur" "Create a supplier account" %}{% endblock %}
+{% block page_title %}{% tr "Nouveau fournisseur et compte portail" "New supplier and portal account" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+  <form method="post" enctype="multipart/form-data" class="space-y-6" novalidate>
+    {% csrf_token %}
+
+    <section class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="font-bold text-lg mb-1">{% tr "Informations du fournisseur" "Supplier information" %}</h2>
+      <p class="text-sm text-gray-500 mb-5">{% tr "Ces informations et le logo apparaîtront dans son tableau de bord." "This information and the logo will appear on the supplier dashboard." %}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for field in form %}
+          {% if field.name|slice:":9" == "supplier_" %}
+          <div class="{% if field.name == 'supplier_notes' or field.name == 'supplier_address' %}sm:col-span-2{% endif %}">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">{{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="text-xs text-gray-400 mt-1">{{ field.help_text }}</p>{% endif %}
+            {% for error in field.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="font-bold text-lg mb-1">{% tr "Compte de connexion" "Login account" %}</h2>
+      <p class="text-sm text-gray-500 mb-5">{% tr "Le fournisseur utilisera ces identifiants pour accéder à son espace privé." "The supplier will use these credentials to access the private portal." %}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for field in form %}
+          {% if field.name|slice:":9" != "supplier_" %}
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">{{ field.label }}{% if field.field.required %} <span class="text-red-500">*</span>{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="text-xs text-gray-400 mt-1">{{ field.help_text|safe }}</p>{% endif %}
+            {% for error in field.errors %}<p class="text-xs text-red-600 mt-1">{{ error }}</p>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if form.non_field_errors %}
+      <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="flex gap-3">
+      <button type="submit" class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-2.5 px-6 rounded-lg">{% tr "Créer le fournisseur et son compte" "Create supplier and account" %}</button>
+      <a href="{% url 'user_list' %}" class="py-2.5 px-5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">{% tr "Annuler" "Cancel" %}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

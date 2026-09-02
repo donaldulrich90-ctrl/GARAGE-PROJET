@@ -12,6 +12,13 @@ urlpatterns = [
     path("mes-pieces/<int:pk>/supprimer/", views.MyOfferDeleteView.as_view(), name="offer_delete"),
     path("mouvements/", views.MovementListView.as_view(), name="movement_list"),
     path("mouvements/nouveau/", views.MovementCreateView.as_view(), name="movement_create"),
+    path("ventes/", views.SalesListView.as_view(), name="sale_list"),
+    path("depenses/", views.ExpenseListView.as_view(), name="expense_list"),
+    path("depenses/nouveau/", views.ExpenseCreateView.as_view(), name="expense_create"),
+    path("depenses/<int:pk>/modifier/", views.ExpenseUpdateView.as_view(), name="expense_update"),
+    path("depenses/<int:pk>/supprimer/", views.ExpenseDeleteView.as_view(), name="expense_delete"),
+    path("rapports/", views.ReportView.as_view(), name="report"),
+    path("rapports/export-csv/", views.report_export_csv, name="report_export_csv"),
     path("profil/", views.ProfileView.as_view(), name="profile"),
     # Commandes reçues
     path("commandes/", views.OrderInboxView.as_view(), name="order_list"),

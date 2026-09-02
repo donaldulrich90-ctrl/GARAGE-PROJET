@@ -9,6 +9,8 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from core.i18n import tr
+
 from .models import (
     Part,
     StockMovement,
@@ -26,7 +28,10 @@ class OrderTransitionError(Exception):
 @transaction.atomic
 def submit_order(order: SupplierOrder) -> SupplierOrder:
     if not order.can_submit():
-        raise OrderTransitionError("Impossible de soumettre cette commande (statut ou lignes).")
+        raise OrderTransitionError(tr(
+            "Impossible de soumettre cette commande (statut ou lignes).",
+            "This order cannot be submitted (status or lines).",
+        ))
     order.recompute_total()
     order.status = SupplierOrder.STATUS_SUBMITTED
     order.submitted_at = timezone.now()
@@ -37,20 +42,31 @@ def submit_order(order: SupplierOrder) -> SupplierOrder:
 @transaction.atomic
 def validate_order(order: SupplierOrder, supplier_note: str = "") -> SupplierOrder:
     """Le fournisseur valide la commande. Verrouille la commission et décrémente le stock fournisseur."""
+    order = SupplierOrder.objects.select_for_update().select_related("garage", "supplier").get(pk=order.pk)
     if not order.can_validate():
-        raise OrderTransitionError("Cette commande ne peut pas être validée.")
+        raise OrderTransitionError(tr(
+            "Cette commande ne peut pas être validée.",
+            "This order cannot be approved.",
+        ))
+    lines = list(order.lines.select_related("supplier_part", "supplier_part__catalog_part"))
+    part_ids = [line.supplier_part_id for line in lines if line.supplier_part_id]
+    locked_parts = {
+        part.pk: part
+        for part in SupplierPart.objects.select_for_update().filter(pk__in=part_ids)
+    }
     # Vérifier le stock disponible
-    for line in order.lines.select_related("supplier_part"):
-        sp = line.supplier_part
+    for line in lines:
+        sp = locked_parts.get(line.supplier_part_id)
         if sp is None:
             continue
         if sp.quantity_available < line.quantity:
-            raise OrderTransitionError(
-                f"Stock insuffisant pour {line.catalog_name} : disponible {sp.quantity_available}, demandé {line.quantity}."
-            )
+            raise OrderTransitionError(tr(
+                f"Stock insuffisant pour {line.catalog_name} : disponible {sp.quantity_available}, demandé {line.quantity}.",
+                f"Insufficient stock for {line.catalog_name}: {sp.quantity_available} available, {line.quantity} requested.",
+            ))
     # Décrémenter + journaliser les sorties
-    for line in order.lines.select_related("supplier_part"):
-        sp = line.supplier_part
+    for line in lines:
+        sp = locked_parts.get(line.supplier_part_id)
         if sp is None:
             continue
         SupplierStockMovement.objects.create(
@@ -59,6 +75,10 @@ def validate_order(order: SupplierOrder, supplier_note: str = "") -> SupplierOrd
             quantity=line.quantity,
             unit_price=line.unit_price,
             destination_garage=order.garage,
+            sale_reference=order.reference,
+            customer_name=order.garage.name,
+            payment_method=SupplierStockMovement.PAYMENT_CREDIT,
+            source_order=order,
             reason=f"Commande {order.reference} validée",
         ).apply_to_stock()
     order.recompute_total()
@@ -74,7 +94,10 @@ def validate_order(order: SupplierOrder, supplier_note: str = "") -> SupplierOrd
 @transaction.atomic
 def reject_order(order: SupplierOrder, reason: str) -> SupplierOrder:
     if not order.can_reject():
-        raise OrderTransitionError("Cette commande ne peut pas être rejetée.")
+        raise OrderTransitionError(tr(
+            "Cette commande ne peut pas être rejetée.",
+            "This order cannot be rejected.",
+        ))
     order.status = SupplierOrder.STATUS_REJECTED
     order.rejected_at = timezone.now()
     order.rejection_reason = reason or "Sans motif"
@@ -85,7 +108,10 @@ def reject_order(order: SupplierOrder, reason: str) -> SupplierOrder:
 @transaction.atomic
 def ship_order(order: SupplierOrder) -> SupplierOrder:
     if not order.can_ship():
-        raise OrderTransitionError("Cette commande ne peut pas être marquée expédiée.")
+        raise OrderTransitionError(tr(
+            "Cette commande ne peut pas être marquée expédiée.",
+            "This order cannot be marked as shipped.",
+        ))
     order.status = SupplierOrder.STATUS_SHIPPED
     order.shipped_at = timezone.now()
     order.save()
@@ -96,7 +122,10 @@ def ship_order(order: SupplierOrder) -> SupplierOrder:
 def deliver_order(order: SupplierOrder) -> SupplierOrder:
     """Le garage confirme la réception. Crée les Part manquants et enregistre l'entrée en stock."""
     if not order.can_deliver():
-        raise OrderTransitionError("Cette commande ne peut pas être marquée livrée.")
+        raise OrderTransitionError(tr(
+            "Cette commande ne peut pas être marquée livrée.",
+            "This order cannot be marked as delivered.",
+        ))
     garage = order.garage
     for line in order.lines.select_related("supplier_part", "supplier_part__catalog_part"):
         sp = line.supplier_part
@@ -136,7 +165,10 @@ def deliver_order(order: SupplierOrder) -> SupplierOrder:
 @transaction.atomic
 def cancel_order(order: SupplierOrder) -> SupplierOrder:
     if not order.can_cancel():
-        raise OrderTransitionError("Cette commande ne peut plus être annulée.")
+        raise OrderTransitionError(tr(
+            "Cette commande ne peut plus être annulée.",
+            "This order can no longer be cancelled.",
+        ))
     order.status = SupplierOrder.STATUS_CANCELLED
     order.cancelled_at = timezone.now()
     order.save()
@@ -146,9 +178,15 @@ def cancel_order(order: SupplierOrder) -> SupplierOrder:
 def add_line_from_supplier_part(order: SupplierOrder, supplier_part: SupplierPart, quantity: int) -> SupplierOrderLine:
     """Ajoute (ou incrémente) une ligne pour l'offre fournisseur donnée."""
     if order.status != SupplierOrder.STATUS_DRAFT:
-        raise OrderTransitionError("On ne peut ajouter des lignes qu'à une commande en brouillon.")
+        raise OrderTransitionError(tr(
+            "On ne peut ajouter des lignes qu'à une commande en brouillon.",
+            "Lines can only be added to a draft order.",
+        ))
     if supplier_part.supplier_id != order.supplier_id:
-        raise OrderTransitionError("Cette offre n'appartient pas au fournisseur de la commande.")
+        raise OrderTransitionError(tr(
+            "Cette offre n'appartient pas au fournisseur de la commande.",
+            "This offer does not belong to the order supplier.",
+        ))
     line = order.lines.filter(supplier_part=supplier_part).first()
     if line:
         line.quantity = line.quantity + quantity

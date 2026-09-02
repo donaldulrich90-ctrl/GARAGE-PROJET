@@ -1,79 +1,88 @@
 {% extends "supplier_portal/base.html" %}
-{% block title %}Tableau de bord{% endblock %}
-{% block page_title %}Tableau de bord fournisseur{% endblock %}
+{% load bilingual %}
+{% block title %}{% tr "Tableau de bord" "Dashboard" %}{% endblock %}
+{% block page_title %}{% tr "Tableau de bord fournisseur" "Supplier dashboard" %}{% endblock %}
 
 {% block header_actions %}
   <a href="{% url 'supplier_portal:offer_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">
-    + Nouvelle pièce
+    + {% tr "Nouvelle pièce" "New part" %}
   </a>
   <a href="{% url 'supplier_portal:movement_create' %}" class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-100 font-medium">
-    + Mouvement stock
+    + {% tr "Mouvement stock" "Stock movement" %}
   </a>
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="text-xs text-gray-400 uppercase tracking-wider">Références catalogue</div>
-    <div class="text-3xl font-black mt-2 text-[#1A1A1A]">{{ offer_count }}</div>
+<section class="bg-white rounded-xl border border-gray-200 p-5 mb-6 flex items-center gap-4">
+  {% if supplier.logo %}
+    <img src="{{ supplier.logo.url }}" alt="Logo {{ supplier.name }}" class="w-20 h-20 object-contain rounded-xl border border-gray-100 p-2">
+  {% else %}
+    <div class="w-20 h-20 rounded-xl bg-[#FFCD11] flex items-center justify-center text-3xl font-black text-[#1A1A1A]">{{ supplier.name|slice:":1"|upper }}</div>
+  {% endif %}
+  <div class="min-w-0">
+    <h2 class="text-xl font-black text-[#1A1A1A]">{{ supplier.name }}</h2>
+    <p class="text-sm text-gray-500">{% if supplier.contact_name %}{{ supplier.contact_name }}{% else %}{% tr "Profil fournisseur" "Supplier profile" %}{% endif %}{% if supplier.city %} · {{ supplier.city }}{% endif %}</p>
+    <p class="text-xs text-gray-400 mt-1">{% if supplier.phone %}{{ supplier.phone }}{% else %}{% tr "Téléphone non renseigné" "Phone not provided" %}{% endif %}{% if supplier.email %} · {{ supplier.email }}{% endif %}</p>
   </div>
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="text-xs text-gray-400 uppercase tracking-wider">Pièces en stock</div>
-    <div class="text-3xl font-black mt-2 text-[#7A5C00]">{{ total_stock }}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="text-xs text-gray-400 uppercase tracking-wider">Sorties (30j)</div>
-    <div class="text-3xl font-black mt-2 text-[#1A1A1A]">{{ recent_out_count }}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <div class="text-xs text-gray-400 uppercase tracking-wider">CA 30 jours (FCFA)</div>
-    <div class="text-3xl font-black mt-2 text-green-700">{{ recent_out_total|default:0|floatformat:0 }}</div>
-  </div>
+  <a href="{% url 'supplier_portal:profile' %}" class="ml-auto text-sm font-semibold text-[#7A5C00] hover:underline">{% tr "Compléter le profil" "Complete profile" %}</a>
+</section>
+
+{% if low_stock_count or pending_order_count %}
+<section class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex flex-wrap gap-4 text-sm text-red-800">
+  {% if low_stock_count %}<a href="{% url 'supplier_portal:offer_list' %}" class="font-bold hover:underline">{{ low_stock_count }} {% tr "alerte(s) de stock sur la plateforme" "stock alert(s) on the platform" %}</a>{% endif %}
+  {% if pending_order_count %}<a href="{% url 'supplier_portal:order_list' %}" class="font-bold hover:underline">{{ pending_order_count }} {% tr "commande(s) à traiter" "order(s) to process" %}</a>{% endif %}
+</section>
+{% endif %}
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs text-gray-400 uppercase">{% tr "Références" "References" %}</div><div class="text-3xl font-black mt-2">{{ offer_count }}</div></div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs text-gray-400 uppercase">{% tr "Pièces disponibles" "Available parts" %}</div><div class="text-3xl font-black mt-2">{{ total_stock }}</div></div>
+  <div class="bg-white rounded-xl border border-gray-200 p-5"><div class="text-xs text-gray-400 uppercase">{% tr "Valeur du stock" "Stock value" %}</div><div class="text-2xl font-black mt-2">{{ stock_value|floatformat:0 }} <span class="text-xs font-normal">FCFA</span></div></div>
+  <div class="bg-white rounded-xl border {% if low_stock_count %}border-red-300{% else %}border-gray-200{% endif %} p-5"><div class="text-xs text-gray-400 uppercase">{% tr "Alertes stock" "Stock alerts" %}</div><div class="text-3xl font-black mt-2 {% if low_stock_count %}text-red-700{% endif %}">{{ low_stock_count }}</div></div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Stock faible</h2>
+<h2 class="text-sm font-black uppercase tracking-wider text-gray-500 mb-3">{% tr "Résultats financiers" "Financial results" %}</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  {% for item in period_summaries %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="flex justify-between items-center mb-4"><span class="font-bold">{{ item.label }}</span><a href="{% url 'supplier_portal:report' %}?period={{ item.period }}" class="text-xs text-[#7A5C00] hover:underline">{% tr "Voir le rapport" "View report" %}</a></div>
+    <dl class="space-y-2 text-sm">
+      <div class="flex justify-between"><dt class="text-gray-500">{% tr "Ventes" "Sales" %}</dt><dd class="font-bold text-green-700">{{ item.revenue|floatformat:0 }} FCFA</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">{% tr "Dépenses" "Expenses" %}</dt><dd class="font-bold text-red-700">{{ item.expenses|floatformat:0 }} FCFA</dd></div>
+      <div class="flex justify-between border-t pt-2"><dt class="font-semibold">{% tr "Résultat net" "Net result" %}</dt><dd class="font-black {% if item.net < 0 %}text-red-700{% else %}text-[#1A1A1A]{% endif %}">{{ item.net|floatformat:0 }} FCFA</dd></div>
+      <div class="text-xs text-gray-400">{{ item.units_sold }} {% tr "pièce(s)" "part(s)" %} · {{ item.sales_count }} {% tr "ligne(s) de vente" "sales line(s)" %}</div>
+    </dl>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <section class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex justify-between mb-4"><h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">{% tr "Stock faible" "Low stock" %}</h2><a href="{% url 'supplier_portal:offer_list' %}" class="text-xs text-[#7A5C00]">{% tr "Tout le stock" "All stock" %}</a></div>
     {% if low_stock %}
     <ul class="divide-y divide-gray-100">
       {% for offer in low_stock %}
       <li class="py-2 flex items-center justify-between text-sm">
-        <a href="{% url 'supplier_portal:offer_update' offer.pk %}" class="text-[#7A5C00] hover:underline font-medium">
-          {{ offer.catalog_part.name }}
-        </a>
-        <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">
-          Stock : {{ offer.quantity_available }}
-        </span>
+        <a href="{% url 'supplier_portal:offer_update' offer.pk %}" class="text-[#7A5C00] hover:underline font-medium">{{ offer.catalog_part.name }}</a>
+        <span class="text-xs bg-red-50 text-red-800 px-2 py-0.5 rounded-full font-semibold">{{ offer.quantity_available }} / {% tr "seuil" "threshold" %} {{ offer.alert_threshold }}</span>
       </li>
       {% endfor %}
     </ul>
-    {% else %}
-    <p class="text-sm text-gray-400">Aucune pièce en rupture.</p>
-    {% endif %}
-  </div>
+    {% else %}<p class="text-sm text-gray-400">{% tr "Tous les stocks sont au-dessus de leur seuil d'alerte." "All stock levels are above their alert threshold." %}</p>{% endif %}
+  </section>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Derniers mouvements</h2>
-    {% if recent_movements %}
+  <section class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex justify-between mb-4"><h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">{% tr "Dernières ventes" "Recent sales" %}</h2><a href="{% url 'supplier_portal:sale_list' %}" class="text-xs text-[#7A5C00]">{% tr "Toutes les ventes" "All sales" %}</a></div>
+    {% if recent_sales %}
     <ul class="divide-y divide-gray-100">
-      {% for mv in recent_movements %}
-      <li class="py-2 text-sm">
-        <div class="flex justify-between">
-          <span class="font-medium">{{ mv.supplier_part.catalog_part.name }}</span>
-          <span class="text-xs {% if mv.movement_type == 'out' %}text-red-700{% elif mv.movement_type == 'in' %}text-green-700{% else %}text-gray-500{% endif %} font-semibold">
-            {% if mv.movement_type == 'in' %}+{% elif mv.movement_type == 'out' %}−{% endif %}{{ mv.quantity }}
-          </span>
-        </div>
-        <div class="text-xs text-gray-400">
-          {{ mv.created_at|date:"d/m/Y H:i" }}
-          {% if mv.destination_garage %} — {{ mv.destination_garage.name }}{% endif %}
-        </div>
+      {% for sale in recent_sales %}
+      <li class="py-2 text-sm flex justify-between gap-3">
+        <div><div class="font-medium">{{ sale.supplier_part.catalog_part.name }}</div><div class="text-xs text-gray-400">{% if sale.customer_name %}{{ sale.customer_name }}{% elif sale.destination_garage %}{{ sale.destination_garage.name }}{% else %}{% tr "Client comptoir" "Walk-in customer" %}{% endif %} · {{ sale.created_at|date:"SHORT_DATETIME_FORMAT" }}</div></div>
+        <div class="text-right"><div class="font-bold">{{ sale.line_total|floatformat:0 }} FCFA</div><div class="text-xs text-gray-400">{{ sale.quantity }} × {{ sale.unit_price|floatformat:0 }}</div></div>
       </li>
       {% endfor %}
     </ul>
-    {% else %}
-    <p class="text-sm text-gray-400">Aucun mouvement enregistré.</p>
-    {% endif %}
-  </div>
+    {% else %}<p class="text-sm text-gray-400">{% tr "Aucune vente enregistrée." "No sales recorded." %}</p>{% endif %}
+  </section>
 </div>
 {% endblock %}

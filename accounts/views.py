@@ -2,8 +2,11 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
+from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
+from core.i18n import tr
 from .forms import (
     AdminSetPasswordForm,
     GarageSettingsForm,
@@ -71,12 +74,16 @@ def _require_garage_admin(request):
     return None
 
 
+def _users_for_garage(garage):
+    return User.objects.filter(Q(garage=garage) | Q(supplier__garage=garage)).distinct()
+
+
 @login_required
 def user_list(request):
     guard = _require_garage_admin(request)
     if guard:
         return guard
-    staff = User.objects.filter(garage=request.user.garage).order_by("role", "username")
+    staff = _users_for_garage(request.user.garage).select_related("supplier").order_by("role", "username")
     return render(request, "accounts/user_list.html", {"staff": staff})
 
 
@@ -129,7 +136,7 @@ def user_set_password(request, pk):
     guard = _require_garage_admin(request)
     if guard:
         return guard
-    target = get_object_or_404(User, pk=pk, garage=request.user.garage)
+    target = get_object_or_404(_users_for_garage(request.user.garage), pk=pk)
     if target.pk == request.user.pk:
         return redirect("password_change")
     if request.method == "POST":
@@ -151,22 +158,27 @@ def supplier_user_create(request):
     if guard:
         return guard
     if request.method == "POST":
-        form = SupplierUserCreateForm(request.POST, garage=request.user.garage)
+        form = SupplierUserCreateForm(request.POST, request.FILES, garage=request.user.garage)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.garage = None  # comptes fournisseurs = non liés à un garage
-            user.role = User.ROLE_SUPPLIER
-            user.is_staff = False
-            user.is_superuser = False
-            user.save()
+            with transaction.atomic():
+                user = form.save(garage=request.user.garage)
             messages.success(
                 request,
-                f"Compte fournisseur créé pour {user.supplier.name} (identifiant : {user.username}).",
+                tr(
+                    f"Compte fournisseur créé pour {user.supplier.name} (identifiant : {user.username}).",
+                    f"Supplier account created for {user.supplier.name} (username: {user.username}).",
+                ),
             )
             return redirect("user_list")
     else:
         form = SupplierUserCreateForm(garage=request.user.garage)
-    return render(request, "accounts/user_form.html", {"form": form, "action": "Créer un compte fournisseur"})
+    return render(request, "accounts/supplier_user_form.html", {
+        "form": form,
+        "action": tr(
+            "Créer le fournisseur et son compte",
+            "Create supplier and account",
+        ),
+    })
 
 
 @login_required
@@ -174,7 +186,7 @@ def user_delete(request, pk):
     guard = _require_garage_admin(request)
     if guard:
         return guard
-    target = get_object_or_404(User, pk=pk, garage=request.user.garage)
+    target = get_object_or_404(_users_for_garage(request.user.garage), pk=pk)
     if target.pk == request.user.pk:
         messages.error(request, "Vous ne pouvez pas supprimer votre propre compte.")
         return redirect("user_list")

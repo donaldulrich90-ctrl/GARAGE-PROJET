@@ -1,13 +1,14 @@
 {% extends "supplier_portal/base.html" %}
-{% block title %}Nouveau mouvement{% endblock %}
-{% block page_title %}Enregistrer un mouvement de stock{% endblock %}
+{% load bilingual %}
+{% block title %}{% tr "Nouveau mouvement" "New movement" %}{% endblock %}
+{% block page_title %}{% tr "Enregistrer un mouvement de stock" "Record a stock movement" %}{% endblock %}
 
 {% block content %}
 <div class="max-w-2xl bg-white rounded-xl border border-gray-200 p-6">
   <p class="text-xs text-gray-500 mb-4">
-    L'enregistrement du mouvement met automatiquement à jour la quantité disponible de la pièce.
-    Pour une <strong>entrée</strong>, la quantité est ajoutée ; pour une <strong>sortie</strong>, elle est retirée.
-    Un <strong>ajustement</strong> remplace le stock par la quantité indiquée.
+    {% tr "L'enregistrement du mouvement met automatiquement à jour la quantité disponible de la pièce." "Recording a movement automatically updates the available quantity for the part." %}
+    {% tr "Pour une entrée, la quantité est ajoutée ; pour une sortie, elle est retirée." "For an incoming movement, the quantity is added; for an outgoing movement, it is deducted." %}
+    {% tr "Un ajustement remplace le stock par la quantité indiquée." "An adjustment replaces the stock with the quantity entered." %}
   </p>
   <form method="post" novalidate>
     {% csrf_token %}
@@ -24,8 +25,8 @@
       {% endfor %}
     </div>
     <div class="pt-4 border-t border-gray-100 mt-4 flex gap-3">
-      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#E6B800]">Enregistrer</button>
-      <a href="{% url 'supplier_portal:movement_list' %}" class="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">Annuler</a>
+      <button type="submit" class="bg-[#FFCD11] text-[#1A1A1A] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#E6B800]">{% tr "Enregistrer" "Save" %}</button>
+      <a href="{% url 'supplier_portal:movement_list' %}" class="border border-gray-300 text-gray-700 px-6 py-2.5 rounded-lg text-sm hover:bg-gray-50">{% tr "Annuler" "Cancel" %}</a>
     </div>
   </form>
 </div>

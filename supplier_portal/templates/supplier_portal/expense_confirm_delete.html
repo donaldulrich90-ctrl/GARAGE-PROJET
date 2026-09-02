@@ -1,0 +1,7 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Supprimer une dépense" "Delete an expense" %}{% endblock %}
+{% block page_title %}{% tr "Supprimer une dépense" "Delete an expense" %}{% endblock %}
+{% block content %}
+<div class="max-w-xl bg-white rounded-xl border border-red-200 p-6"><p class="mb-5">{% tr "Confirmer la suppression de la dépense" "Confirm deletion of the expense" %} <strong>{{ object.description }}</strong> {% tr "de" "for" %} <strong>{{ object.amount|floatformat:0 }} FCFA</strong> ?</p><form method="post">{% csrf_token %}<button class="bg-red-600 text-white px-5 py-2.5 rounded-lg font-bold">{% tr "Supprimer" "Delete" %}</button><a href="{% url 'supplier_portal:expense_list' %}" class="ml-3 border border-gray-300 px-5 py-2.5 rounded-lg">{% tr "Annuler" "Cancel" %}</a></form></div>
+{% endblock %}

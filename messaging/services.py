@@ -1,7 +1,6 @@
 import re
 import urllib.parse
 
-import requests as http_requests
 from django.conf import settings
 
 # Templates système définis statiquement (non modifiables)
@@ -170,6 +169,8 @@ def send_whatsapp_api(phone: str, body: str) -> tuple[bool, str]:
     Retourne (True, message_id) en cas de succès, (False, message_erreur) sinon.
     Ne lève jamais d'exception.
     """
+    import requests as http_requests
+
     token = settings.WHATSAPP_API_TOKEN
     phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
     version = getattr(settings, 'WHATSAPP_API_VERSION', 'v20.0')

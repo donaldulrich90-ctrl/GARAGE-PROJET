@@ -14,6 +14,10 @@ isolé par colonne `garage_id` (pas de schéma séparé par base de données).
   historique via `vehicle.repair_orders`).
 - **inventory** — fournisseurs (avec flag `is_faest`), pièces, stock,
   mouvements de stock, seuils d'alerte de réapprovisionnement.
+- **supplier_portal** — espace fournisseur séparé : fiche société et logo,
+  catalogue et stock, ventes détaillées, dépenses, commandes reçues, alertes
+  de stock sur la plateforme et rapports journaliers, hebdomadaires et
+  mensuels avec export CSV, disponible en français et en anglais.
 - **repair_orders** — le cœur du système : ordre de réparation (OR) avec
   statut (reçu → diagnostic → en cours → prêt → livré), tâches de main
   d'œuvre, pièces consommées.
@@ -33,6 +37,46 @@ python manage.py migrate
 python manage.py shell < seed_demo.py   # données de démo
 python manage.py runserver
 ```
+
+Sous Windows, `lancer.bat` installe ou actualise les dépendances, applique les
+migrations sans effacer la base existante, puis démarre l'application. Les
+données de démonstration ne sont créées que lors de la première installation.
+
+## Création et utilisation d'un compte fournisseur
+
+Depuis **Utilisateurs > Nouveau fournisseur**, l'administrateur du garage
+enregistre en une fois la société (raison sociale, responsable, téléphone,
+adresse, IFU/RCCM, site, logo) et son compte de connexion. Le fournisseur
+dispose ensuite de son propre tableau de bord et ne voit que ses données.
+
+Son espace permet de :
+
+- gérer ses références, quantités et seuils d'alerte ;
+- enregistrer chaque entrée ou sortie de stock et les détails d'une vente ;
+- suivre les dépenses avec justificatif ;
+- consulter les commandes des garages ;
+- comparer ventes, dépenses et résultat net par jour, semaine ou mois ;
+- exporter le rapport en CSV ouvrable dans Excel.
+
+Les alertes de stock du portail restent internes à la plateforme : aucun
+message WhatsApp n'est envoyé pour ces alertes.
+
+## Configuration de production
+
+Les informations sensibles sont lues depuis l'environnement. Variables utiles :
+
+- `DJANGO_SECRET_KEY` : clé secrète longue et aléatoire ;
+- `DJANGO_DEBUG=False` ;
+- `DJANGO_ALLOWED_HOSTS=garage.exemple.com,www.garage.exemple.com` ;
+- `DJANGO_SECURE_SSL_REDIRECT=True` après activation de HTTPS ;
+- `DJANGO_SECURE_HSTS_SECONDS=31536000` une fois HTTPS vérifié (activer HSTS
+  progressivement et avec prudence) ;
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` et
+  `POSTGRES_PORT` pour PostgreSQL ;
+- `DJANGO_CSRF_TRUSTED_ORIGINS=https://garage.exemple.com`.
+
+Sans `POSTGRES_DB`, l'application utilise SQLite, ce qui convient au test local
+mais pas à une production avec plusieurs utilisateurs simultanés.
 
 Comptes de test créés par `seed_demo.py` :
 - **Admin garage** : `admin_wayalghin` / `garage1234` → voit uniquement

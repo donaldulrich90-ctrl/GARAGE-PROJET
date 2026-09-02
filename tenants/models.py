@@ -7,6 +7,9 @@ from core.models import TimeStampedModel
 class Garage(TimeStampedModel):
     """Un garage client de la plateforme SaaS = un tenant."""
 
+    # Ce modèle historique utilise AutoField (voir migration 0005).
+    id = models.AutoField(primary_key=True)
+
     PLAN_CHOICES = [
         ("starter", "Starter"),
         ("pro", "Pro"),

@@ -1,0 +1,43 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Ventes détaillées" "Detailed sales" %}{% endblock %}
+{% block page_title %}{% tr "Ventes détaillées" "Detailed sales" %}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'supplier_portal:movement_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] font-bold">+ {% tr "Enregistrer une vente" "Record a sale" %}</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+  <div class="bg-white border border-gray-200 rounded-xl p-5"><div class="text-xs uppercase text-gray-400">{% tr "Chiffre d'affaires filtré" "Filtered revenue" %}</div><div class="text-2xl font-black mt-2 text-green-700">{{ sales_total|floatformat:0 }} FCFA</div></div>
+  <div class="bg-white border border-gray-200 rounded-xl p-5"><div class="text-xs uppercase text-gray-400">{% tr "Pièces vendues" "Parts sold" %}</div><div class="text-2xl font-black mt-2">{{ units_total }}</div></div>
+</div>
+
+<form method="get" class="mb-4 flex flex-col sm:flex-row gap-3">
+  <select name="period" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+    {% for value, label in period_choices %}<option value="{{ value }}" {% if period == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="{% tr 'Référence, pièce ou client…' 'Reference, part or customer…' %}" class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <button class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm font-semibold">{% tr "Filtrer" "Filter" %}</button>
+</form>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+  <table class="w-full text-sm min-w-[900px]">
+    <thead><tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+      <th class="px-4 py-3 text-left">{% tr "Date / Référence" "Date / Reference" %}</th><th class="px-4 py-3 text-left">{% tr "Pièce" "Part" %}</th><th class="px-4 py-3 text-left">{% tr "Client" "Customer" %}</th><th class="px-4 py-3 text-right">{% tr "Qté" "Qty" %}</th><th class="px-4 py-3 text-right">{% tr "Prix" "Price" %}</th><th class="px-4 py-3 text-right">{% tr "Total" "Total" %}</th><th class="px-4 py-3 text-left">{% tr "Paiement" "Payment" %}</th>
+    </tr></thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for sale in sales %}
+      <tr class="hover:bg-[#FFFBE0]">
+        <td class="px-4 py-3"><div>{{ sale.created_at|date:"SHORT_DATETIME_FORMAT" }}</div><div class="font-mono text-xs text-gray-400">{{ sale.sale_reference|default:"—" }}</div></td>
+        <td class="px-4 py-3"><div class="font-semibold">{{ sale.supplier_part.catalog_part.name }}</div><div class="text-xs font-mono text-gray-400">{{ sale.supplier_part.catalog_part.reference }}</div></td>
+        <td class="px-4 py-3">{% if sale.customer_name %}{{ sale.customer_name }}{% elif sale.destination_garage %}{{ sale.destination_garage.name }}{% else %}{% tr "Client comptoir" "Walk-in customer" %}{% endif %}{% if sale.source_order %}<div class="text-xs text-gray-400">{% tr "Commande" "Order" %} {{ sale.source_order.reference }}</div>{% endif %}</td>
+        <td class="px-4 py-3 text-right font-bold">{{ sale.quantity }}</td>
+        <td class="px-4 py-3 text-right">{{ sale.unit_price|floatformat:0 }}</td>
+        <td class="px-4 py-3 text-right font-black">{{ sale.line_total|floatformat:0 }}</td>
+        <td class="px-4 py-3">{% if sale.payment_method %}{{ sale.payment_method|payment_label }}{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">{% tr "Aucune vente pour cette période." "No sales for this period." %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
