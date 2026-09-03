@@ -14,6 +14,8 @@ from django.views.generic import DetailView, ListView, TemplateView
 from core.views import GarageRequiredMixin
 from inventory.models import Part, StockMovement
 
+from workshops.services import create_payment_allocations
+
 from .forms import PaymentForm, ProformaForm, ProformaLineFormSet
 from .models import Invoice, Payment, ProformaInvoice
 
@@ -219,10 +221,12 @@ class AddPaymentView(GarageRequiredMixin, View):
         invoice = get_object_or_404(Invoice.objects.for_garage(self.garage), pk=pk)
         form = PaymentForm(request.POST)
         if form.is_valid():
-            payment = form.save(commit=False)
-            payment.invoice = invoice
-            payment.save()
-            _sync_invoice_status(invoice)
+            with transaction.atomic():
+                payment = form.save(commit=False)
+                payment.invoice = invoice
+                payment.save()
+                create_payment_allocations(payment)
+                _sync_invoice_status(invoice)
             messages.success(request, f"Paiement de {payment.amount} FCFA enregistré.")
         else:
             messages.error(request, "Formulaire invalide.")

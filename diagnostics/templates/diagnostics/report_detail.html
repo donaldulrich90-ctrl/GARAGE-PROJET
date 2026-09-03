@@ -1,0 +1,110 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ report.reference }}{% endblock %}
+{% block page_title %}{{ report.reference }}{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'diagnostic_print' report.pk %}" target="_blank"
+     class="border border-[#FFCD11] text-[#7A5C00] text-sm px-4 py-2 rounded-lg hover:bg-[#FFFBE0] transition-colors font-semibold">
+    🖨 Imprimer
+  </a>
+  {% if report.original_file %}
+  <a href="{{ report.original_file.url }}" target="_blank"
+     class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    ⬇ Original
+  </a>
+  {% endif %}
+  <a href="{% url 'diagnostic_update' report.pk %}"
+     class="border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+    Modifier
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'order_detail' order.pk %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← {{ order.reference }}</a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="space-y-4">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Informations</h3>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between"><dt class="text-gray-500">Date scan</dt><dd class="font-semibold">{{ report.scan_date|date:"d/m/Y H:i" }}</dd></div>
+        {% if report.mileage %}<div class="flex justify-between"><dt class="text-gray-500">Kilométrage</dt><dd class="font-semibold">{{ report.mileage }} km</dd></div>{% endif %}
+        {% if report.scanner_name %}<div class="flex justify-between"><dt class="text-gray-500">Outil</dt><dd class="font-semibold">{{ report.scanner_name }}</dd></div>{% endif %}
+        {% if report.technician %}<div class="flex justify-between"><dt class="text-gray-500">Technicien</dt><dd class="font-semibold">{{ report.technician.get_full_name|default:report.technician.username }}</dd></div>{% endif %}
+        <div class="flex justify-between"><dt class="text-gray-500">Codes DTC</dt><dd class="font-black text-[#1A1A1A]">{{ report.dtc_count }}</dd></div>
+      </dl>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Véhicule</h3>
+      <p class="font-mono font-black text-[#7A5C00]">{{ order.vehicle.plate_number }}</p>
+      <p class="text-sm text-gray-600">{{ order.vehicle.make }} {{ order.vehicle.model }}{% if order.vehicle.year %} ({{ order.vehicle.year }}){% endif %}</p>
+      <p class="text-sm text-gray-500">Client : {{ order.client.full_name }}</p>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 space-y-5">
+    <!-- Codes DTC -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+        Codes défauts (DTC)
+        <span class="ml-1 bg-[#FFCD11] text-[#1A1A1A] px-2 py-0.5 rounded-full font-black text-xs">{{ report.dtc_count }}</span>
+      </h2>
+      {% if report.codes.all %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-gray-400 uppercase border-b">
+              <th class="pb-2 text-left">Code</th>
+              <th class="pb-2 text-left">Calculateur</th>
+              <th class="pb-2 text-left">Description</th>
+              <th class="pb-2 text-left">Statut</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            {% for dtc in report.codes.all %}
+            <tr>
+              <td class="py-2 font-mono font-black text-[#1A1A1A]">{{ dtc.code }}</td>
+              <td class="py-2 text-gray-500 text-xs">{{ dtc.module_system|default:"—" }}</td>
+              <td class="py-2 text-gray-700">{{ dtc.description|default:"—" }}</td>
+              <td class="py-2">
+                {% if dtc.status_color == 'red' %}<span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">{{ dtc.get_status_display }}</span>
+                {% elif dtc.status_color == 'orange' %}<span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-semibold">{{ dtc.get_status_display }}</span>
+                {% elif dtc.status_color == 'yellow' %}<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 rounded-full font-semibold">{{ dtc.get_status_display }}</span>
+                {% elif dtc.status_color == 'blue' %}<span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-semibold">{{ dtc.get_status_display }}</span>
+                {% else %}<span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-semibold">{{ dtc.get_status_display }}</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">Aucun code défaut enregistré.</p>
+      {% endif %}
+    </div>
+
+    {% if report.summary %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Résumé</h2>
+      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ report.summary }}</p>
+    </div>
+    {% endif %}
+
+    {% if report.observations %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Observations du technicien</h2>
+      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ report.observations }}</p>
+    </div>
+    {% endif %}
+
+    {% if report.recommendations %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Recommandations</h2>
+      <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ report.recommendations }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

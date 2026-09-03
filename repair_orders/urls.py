@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
@@ -14,4 +14,5 @@ urlpatterns = [
     path('<int:order_pk>/piece/<int:pk>/retirer/', views.RemovePartView.as_view(), name='part_remove'),
     path('<int:pk>/facture/', views.CreateInvoiceView.as_view(), name='order_create_invoice'),
     path('<int:pk>/proforma/', views.ProformaPrintView.as_view(), name='order_proforma'),
+    path('diagnostics/', include('diagnostics.urls')),
 ]

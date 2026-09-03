@@ -77,6 +77,14 @@ class Invoice(TenantModel):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_UNPAID)
     issued_at = models.DateField(auto_now_add=True)
+    total_snapshot = models.DecimalField(
+        "Total figé",
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Total figé au moment de la création de la facture, pour reporting par section.",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -210,3 +218,55 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.amount} FCFA - {self.invoice.reference}"
+
+
+class InvoiceSectionBreakdown(models.Model):
+    """Répartition figée d'une facture par section atelier, créée à l'émission."""
+
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="section_breakdowns")
+    section = models.ForeignKey(
+        "workshops.WorkshopSection",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_breakdowns",
+        verbose_name="Section",
+    )
+    labor_amount = models.DecimalField("Main d'œuvre", max_digits=12, decimal_places=2, default=0)
+    parts_amount = models.DecimalField("Pièces", max_digits=12, decimal_places=2, default=0)
+    total_amount = models.DecimalField("Total section", max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = "Répartition facture/section"
+        verbose_name_plural = "Répartitions facture/section"
+
+    def __str__(self):
+        section_name = self.section.name if self.section else "Non attribué"
+        return f"{self.invoice.reference} — {section_name} : {self.total_amount} FCFA"
+
+    @property
+    def section_label(self):
+        return self.section.name if self.section else "Non attribué / Historique"
+
+
+class PaymentSectionAllocation(models.Model):
+    """Allocation d'un paiement par section, proportionnelle au breakdown de la facture."""
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="section_allocations")
+    section = models.ForeignKey(
+        "workshops.WorkshopSection",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payment_allocations",
+        verbose_name="Section",
+    )
+    amount = models.DecimalField("Montant alloué", max_digits=12, decimal_places=2)
+
+    class Meta:
+        verbose_name = "Allocation paiement/section"
+        verbose_name_plural = "Allocations paiement/section"
+
+    def __str__(self):
+        section_name = self.section.name if self.section else "Non attribué"
+        return f"{self.payment_id} — {section_name} : {self.amount} FCFA"

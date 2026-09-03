@@ -1,0 +1,48 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Sections atelier{% endblock %}
+{% block page_title %}Sections atelier{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'section_create' %}" class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouvelle section
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-3">
+  {% for section in sections %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+    <span class="text-2xl w-10 text-center flex-shrink-0">{{ section.icon|default:"🔧" }}</span>
+    <div style="border-left: 4px solid {{ section.color }}" class="pl-4 flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-bold text-[#1A1A1A] text-base">{{ section.name }}</span>
+        <span class="font-mono text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{{ section.code }}</span>
+        {% if section.is_active %}
+          <span class="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-semibold">Active</span>
+        {% else %}
+          <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-semibold">Inactive</span>
+        {% endif %}
+      </div>
+      {% if section.description %}
+      <p class="text-sm text-gray-500 mt-0.5 truncate">{{ section.description }}</p>
+      {% endif %}
+      <p class="text-xs text-gray-400 mt-1">Ordre : {{ section.display_order }}</p>
+    </div>
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <a href="{% url 'section_update' section.pk %}" class="text-xs border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors font-medium">Modifier</a>
+      <form method="post" action="{% url 'section_toggle' section.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="text-xs border {% if section.is_active %}border-orange-300 text-orange-700 hover:bg-orange-50{% else %}border-green-300 text-green-700 hover:bg-green-50{% endif %} px-3 py-1.5 rounded-lg transition-colors font-medium">
+          {% if section.is_active %}Désactiver{% else %}Activer{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="bg-white rounded-xl border border-gray-200 p-8 text-center">
+    <p class="text-gray-400 text-sm">Aucune section configurée.</p>
+    <a href="{% url 'section_create' %}" class="mt-3 inline-block bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg font-bold">+ Créer la première section</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

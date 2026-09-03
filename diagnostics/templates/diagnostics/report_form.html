@@ -1,0 +1,111 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ action }}{% endblock %}
+{% block page_title %}{{ action }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'order_detail' order.pk %}" class="text-sm text-gray-500 hover:text-[#7A5C00] font-medium">← Retour à {{ order.reference }}</a>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Informations principales -->
+    <div class="lg:col-span-2 space-y-5">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Informations du diagnostic</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Date du scan <span class="text-red-500">*</span></label>
+            {{ form.scan_date }}
+            {% if form.scan_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.scan_date.errors|join:", " }}</p>{% endif %}
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Kilométrage</label>
+            {{ form.mileage }}
+            {% if form.mileage.errors %}<p class="text-red-500 text-xs mt-1">{{ form.mileage.errors|join:", " }}</p>{% endif %}
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Outil de diagnostic</label>
+            {{ form.scanner_name }}
+          </div>
+          <div class="col-span-2 sm:col-span-1">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Technicien</label>
+            {{ form.technician }}
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Résumé</label>
+            {{ form.summary }}
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Observations du technicien</label>
+            {{ form.observations }}
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Recommandations</label>
+            {{ form.recommendations }}
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Fichier scanner original (PDF/image)</label>
+            {{ form.original_file }}
+            {% if report and report.original_file %}
+            <p class="text-xs text-gray-400 mt-1">Fichier actuel : <a href="{{ report.original_file.url }}" target="_blank" class="text-[#7A5C00] hover:underline">{{ report.original_file.name }}</a></p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Codes DTC -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Codes défauts (DTC)</h2>
+        {{ formset.management_form }}
+        <div id="dtc-forms" class="space-y-3">
+          {% for dtc_form in formset %}
+          <div class="dtc-row border border-gray-100 rounded-lg p-4 bg-gray-50">
+            {{ dtc_form.id }}
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Code DTC</label>
+                {{ dtc_form.code }}
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Calculateur / Système</label>
+                {{ dtc_form.module_system }}
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Description</label>
+                {{ dtc_form.description }}
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">Statut</label>
+                {{ dtc_form.status }}
+              </div>
+            </div>
+            {% if formset.can_delete %}
+            <div class="mt-2 flex items-center gap-2">
+              {{ dtc_form.DELETE }} <label class="text-xs text-red-500 cursor-pointer">Supprimer</label>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-4">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Ordre de réparation</h2>
+        <p class="font-mono font-black text-[#7A5C00]">{{ order.reference }}</p>
+        <p class="text-sm text-gray-500 mt-1">{{ order.vehicle.plate_number }} — {{ order.vehicle.make }} {{ order.vehicle.model }}</p>
+        <p class="text-sm text-gray-500">Client : {{ order.client.full_name }}</p>
+      </div>
+      <button type="submit" class="w-full bg-[#FFCD11] text-[#1A1A1A] font-bold py-3 rounded-xl hover:bg-[#E6B800] transition-colors text-base">
+        {% if report %}Enregistrer les modifications{% else %}Créer le diagnostic{% endif %}
+      </button>
+      <a href="{% url 'order_detail' order.pk %}" class="block w-full text-center border border-gray-300 text-gray-700 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm">Annuler</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

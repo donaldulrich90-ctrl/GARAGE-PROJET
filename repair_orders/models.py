@@ -77,6 +77,14 @@ class RepairOrderTask(models.Model):
 
     repair_order = models.ForeignKey(RepairOrder, on_delete=models.CASCADE, related_name="tasks")
     description = models.CharField(max_length=200)
+    section = models.ForeignKey(
+        "workshops.WorkshopSection",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+        verbose_name="Section atelier",
+    )
     mechanic = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -96,6 +104,14 @@ class RepairOrderPart(models.Model):
     part = models.ForeignKey("inventory.Part", on_delete=models.PROTECT, related_name="usages")
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    section = models.ForeignKey(
+        "workshops.WorkshopSection",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="parts_used",
+        verbose_name="Section atelier",
+    )
 
     def __str__(self):
         return f"{self.quantity} x {self.part.name}"
