@@ -31,7 +31,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "gegarage.duckdns.org,127.0.0.1,localhost").split(",")
     if host.strip()
 ]
 
@@ -192,7 +192,7 @@ STORAGES = {
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "https://gegarage.duckdns.org").split(",")
     if origin.strip()
 ]
 
