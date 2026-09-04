@@ -47,6 +47,10 @@
          class="px-3 py-2.5 rounded-lg {% if 'sale' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
         {% tr "Ventes détaillées" "Detailed sales" %}
       </a>
+      <a href="{% url 'supplier_portal:invoice_list' %}"
+         class="px-3 py-2.5 rounded-lg {% if 'invoice' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Factures" "Invoices" %}
+      </a>
       <a href="{% url 'supplier_portal:expense_list' %}"
          class="px-3 py-2.5 rounded-lg {% if 'expense' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
         {% tr "Dépenses" "Expenses" %}

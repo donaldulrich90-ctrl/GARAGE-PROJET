@@ -482,3 +482,72 @@ class SupplierOrderLine(TimeStampedModel):
         if self.supplier_part and not self.g_code:
             self.g_code = self.supplier_part.g_code
         super().save(*args, **kwargs)
+
+
+class SupplierInvoice(TimeStampedModel):
+    """Facture émise par un fournisseur à un garage (depuis une commande ou manuelle)."""
+
+    STATUS_DRAFT = "draft"
+    STATUS_SENT = "sent"
+    STATUS_PAID = "paid"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Brouillon"),
+        (STATUS_SENT, "Envoyée"),
+        (STATUS_PAID, "Payée"),
+    ]
+
+    reference = models.CharField(max_length=30, unique=True, blank=True, editable=False)
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.CASCADE, related_name="invoices",
+    )
+    garage = models.ForeignKey(
+        "tenants.Garage", on_delete=models.PROTECT, related_name="supplier_invoices",
+        verbose_name="Garage (client)",
+    )
+    order = models.ForeignKey(
+        SupplierOrder, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="invoices",
+        help_text="Commande d'origine (si la facture en découle).",
+    )
+    issued_at = models.DateField("Date d'émission", default=timezone.localdate)
+    due_date = models.DateField("Échéance", null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    notes = models.TextField("Notes / conditions", blank=True)
+
+    class Meta:
+        verbose_name = "Facture fournisseur"
+        verbose_name_plural = "Factures fournisseur"
+        ordering = ["-issued_at", "-id"]
+
+    def __str__(self):
+        return self.reference or f"Facture #{self.pk}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.reference:
+            self.reference = f"FF-{self.issued_at:%Y%m%d}-{self.pk:05d}"
+            super().save(update_fields=["reference"])
+
+    @property
+    def total(self):
+        return sum((line.line_total for line in self.lines.all()), Decimal("0"))
+
+
+class SupplierInvoiceLine(TimeStampedModel):
+    invoice = models.ForeignKey(
+        SupplierInvoice, on_delete=models.CASCADE, related_name="lines",
+    )
+    description = models.CharField("Désignation", max_length=200)
+    g_code = models.CharField("G-CODE", max_length=80, blank=True)
+    unit_price = models.DecimalField("Prix unitaire (FCFA)", max_digits=12, decimal_places=2, default=0)
+    quantity = models.PositiveIntegerField("Quantité", default=1)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.quantity} × {self.description} @ {self.unit_price}"
+
+    @property
+    def line_total(self):
+        return (self.unit_price or Decimal("0")) * self.quantity

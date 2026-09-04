@@ -24,7 +24,14 @@ from core.i18n import (
     translated_label,
 )
 from inventory import services as order_services
-from inventory.models import SupplierExpense, SupplierOrder, SupplierPart, SupplierStockMovement
+from inventory.models import (
+    SupplierExpense,
+    SupplierInvoice,
+    SupplierInvoiceLine,
+    SupplierOrder,
+    SupplierPart,
+    SupplierStockMovement,
+)
 
 from .decorators import SupplierRequiredMixin, supplier_required
 from .forms import (
@@ -571,3 +578,256 @@ def order_ship(request, pk):
         request, pk, order_services.ship_order,
         tr("Commande marquée expédiée.", "Order marked as shipped."),
     )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  FACTURES FOURNISSEUR
+#  Le fournisseur émet des factures aux garages qu'il sert (depuis une commande
+#  validée ou en saisie manuelle), puis suit leur statut (brouillon → envoyée →
+#  payée). Lecture/écriture strictement limitées aux factures du fournisseur
+#  connecté.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _supplier_client_garages(supplier):
+    """Garages que ce fournisseur peut facturer : ceux à qui il a déjà eu une
+    commande, plus son garage de rattachement d'origine. Renvoie un queryset."""
+    from tenants.models import Garage
+
+    garage_ids = set(
+        SupplierOrder.objects.filter(supplier=supplier)
+        .values_list("garage_id", flat=True)
+    )
+    if supplier.garage_id:
+        garage_ids.add(supplier.garage_id)
+    return Garage.objects.filter(id__in=garage_ids).order_by("name")
+
+
+def _supplier_invoices(supplier):
+    return (
+        SupplierInvoice.objects.filter(supplier=supplier)
+        .select_related("garage", "order")
+        .prefetch_related("lines")
+    )
+
+
+@supplier_required
+def invoice_list(request):
+    supplier = request.user.supplier
+    status = request.GET.get("status", "").strip()
+    qs = _supplier_invoices(supplier)
+    if status in dict(SupplierInvoice.STATUS_CHOICES):
+        qs = qs.filter(status=status)
+
+    invoices = list(qs)
+    # Total par facture (propriété non requêtable) + agrégats de tête.
+    total_all = sum((inv.total for inv in invoices), Decimal("0"))
+    total_unpaid = sum(
+        (inv.total for inv in invoices if inv.status != SupplierInvoice.STATUS_PAID),
+        Decimal("0"),
+    )
+
+    ctx = {
+        "n": "invoices",
+        "invoices": invoices,
+        "status_filter": status,
+        "status_choices": SupplierInvoice.STATUS_CHOICES,
+        "total_all": total_all,
+        "total_unpaid": total_unpaid,
+    }
+    return render(request, "supplier_portal/invoice_list.html", ctx)
+
+
+@supplier_required
+def invoice_from_order(request, order_pk):
+    """Génère une facture brouillon pré-remplie depuis une commande validée."""
+    supplier = request.user.supplier
+    order = get_object_or_404(
+        SupplierOrder.objects.select_related("garage").prefetch_related("lines"),
+        pk=order_pk, supplier=supplier,
+    )
+    if request.method != "POST":
+        return redirect("supplier_portal:order_detail", pk=order_pk)
+
+    # Une seule facture par commande : rediriger vers l'existante le cas échéant.
+    existing = SupplierInvoice.objects.filter(supplier=supplier, order=order).first()
+    if existing:
+        messages.info(request, tr(
+            "Une facture existe déjà pour cette commande.",
+            "An invoice already exists for this order.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=existing.pk)
+
+    with transaction.atomic():
+        invoice = SupplierInvoice.objects.create(
+            supplier=supplier,
+            garage=order.garage,
+            order=order,
+            notes=tr(
+                f"Facture émise pour la commande {order.reference}.",
+                f"Invoice issued for order {order.reference}.",
+            ),
+        )
+        for line in order.lines.all():
+            SupplierInvoiceLine.objects.create(
+                invoice=invoice,
+                description=line.catalog_name or tr("Pièce", "Part"),
+                g_code=line.g_code,
+                unit_price=line.unit_price,
+                quantity=line.quantity,
+            )
+
+    messages.success(request, tr(
+        "Facture créée depuis la commande. Vérifiez les lignes puis envoyez-la.",
+        "Invoice created from the order. Review the lines then send it.",
+    ))
+    return redirect("supplier_portal:invoice_detail", pk=invoice.pk)
+
+
+@supplier_required
+def invoice_create(request):
+    """Création manuelle d'une facture (choix du garage client)."""
+    supplier = request.user.supplier
+    garages = _supplier_client_garages(supplier)
+
+    if request.method == "POST":
+        garage_id = request.POST.get("garage")
+        issued_at = request.POST.get("issued_at") or None
+        due_date = request.POST.get("due_date") or None
+        notes = request.POST.get("notes", "").strip()
+
+        garage = garages.filter(id=garage_id).first()
+        if not garage:
+            messages.error(request, tr(
+                "Sélectionnez un garage client valide.",
+                "Select a valid client garage.",
+            ))
+        else:
+            invoice = SupplierInvoice(
+                supplier=supplier, garage=garage, notes=notes,
+            )
+            if issued_at:
+                invoice.issued_at = issued_at
+            if due_date:
+                invoice.due_date = due_date
+            invoice.save()
+            messages.success(request, tr(
+                "Facture créée. Ajoutez maintenant les lignes.",
+                "Invoice created. Now add the lines.",
+            ))
+            return redirect("supplier_portal:invoice_detail", pk=invoice.pk)
+
+    ctx = {
+        "n": "invoices",
+        "garages": garages,
+        "today": timezone.localdate(),
+    }
+    return render(request, "supplier_portal/invoice_manual_form.html", ctx)
+
+
+@supplier_required
+def invoice_detail(request, pk):
+    supplier = request.user.supplier
+    invoice = get_object_or_404(
+        _supplier_invoices(supplier), pk=pk,
+    )
+    ctx = {
+        "n": "invoices",
+        "invoice": invoice,
+        "lines": invoice.lines.all(),
+        "can_edit": invoice.status == SupplierInvoice.STATUS_DRAFT,
+        "status_choices": SupplierInvoice.STATUS_CHOICES,
+    }
+    return render(request, "supplier_portal/invoice_detail.html", ctx)
+
+
+@supplier_required
+def invoice_add_line(request, pk):
+    supplier = request.user.supplier
+    invoice = get_object_or_404(SupplierInvoice, pk=pk, supplier=supplier)
+    if request.method != "POST":
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    if invoice.status != SupplierInvoice.STATUS_DRAFT:
+        messages.error(request, tr(
+            "Seules les factures en brouillon peuvent être modifiées.",
+            "Only draft invoices can be edited.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+
+    description = request.POST.get("description", "").strip()
+    g_code = request.POST.get("g_code", "").strip()
+    try:
+        unit_price = Decimal(request.POST.get("unit_price", "0") or "0")
+        quantity = int(request.POST.get("quantity", "1") or "1")
+    except (ValueError, ArithmeticError):
+        messages.error(request, tr("Prix ou quantité invalide.", "Invalid price or quantity."))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+
+    if not description or quantity < 1 or unit_price < 0:
+        messages.error(request, tr(
+            "Renseignez une désignation, une quantité ≥ 1 et un prix ≥ 0.",
+            "Provide a description, a quantity ≥ 1 and a price ≥ 0.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+
+    SupplierInvoiceLine.objects.create(
+        invoice=invoice, description=description, g_code=g_code,
+        unit_price=unit_price, quantity=quantity,
+    )
+    messages.success(request, tr("Ligne ajoutée.", "Line added."))
+    return redirect("supplier_portal:invoice_detail", pk=pk)
+
+
+@supplier_required
+def invoice_line_delete(request, pk, line_pk):
+    supplier = request.user.supplier
+    invoice = get_object_or_404(SupplierInvoice, pk=pk, supplier=supplier)
+    if request.method != "POST":
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    if invoice.status != SupplierInvoice.STATUS_DRAFT:
+        messages.error(request, tr(
+            "Seules les factures en brouillon peuvent être modifiées.",
+            "Only draft invoices can be edited.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    SupplierInvoiceLine.objects.filter(invoice=invoice, pk=line_pk).delete()
+    messages.success(request, tr("Ligne supprimée.", "Line removed."))
+    return redirect("supplier_portal:invoice_detail", pk=pk)
+
+
+@supplier_required
+def invoice_set_status(request, pk, status):
+    supplier = request.user.supplier
+    invoice = get_object_or_404(SupplierInvoice, pk=pk, supplier=supplier)
+    if request.method != "POST":
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    if status not in dict(SupplierInvoice.STATUS_CHOICES):
+        messages.error(request, tr("Statut invalide.", "Invalid status."))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    if status == SupplierInvoice.STATUS_SENT and not invoice.lines.exists():
+        messages.error(request, tr(
+            "Ajoutez au moins une ligne avant d'envoyer la facture.",
+            "Add at least one line before sending the invoice.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    invoice.status = status
+    invoice.save(update_fields=["status", "updated_at"])
+    messages.success(request, tr("Statut mis à jour.", "Status updated."))
+    return redirect("supplier_portal:invoice_detail", pk=pk)
+
+
+@supplier_required
+def invoice_delete(request, pk):
+    supplier = request.user.supplier
+    invoice = get_object_or_404(SupplierInvoice, pk=pk, supplier=supplier)
+    if request.method != "POST":
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    if invoice.status != SupplierInvoice.STATUS_DRAFT:
+        messages.error(request, tr(
+            "Seules les factures en brouillon peuvent être supprimées.",
+            "Only draft invoices can be deleted.",
+        ))
+        return redirect("supplier_portal:invoice_detail", pk=pk)
+    invoice.delete()
+    messages.success(request, tr("Facture supprimée.", "Invoice deleted."))
+    return redirect("supplier_portal:invoice_list")

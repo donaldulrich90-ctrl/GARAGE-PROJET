@@ -26,4 +26,13 @@ urlpatterns = [
     path("commandes/<int:pk>/valider/", views.order_validate, name="order_validate"),
     path("commandes/<int:pk>/rejeter/", views.order_reject, name="order_reject"),
     path("commandes/<int:pk>/expedier/", views.order_ship, name="order_ship"),
+    # Factures fournisseur
+    path("factures/", views.invoice_list, name="invoice_list"),
+    path("factures/nouvelle/", views.invoice_create, name="invoice_create"),
+    path("factures/depuis-commande/<int:order_pk>/", views.invoice_from_order, name="invoice_from_order"),
+    path("factures/<int:pk>/", views.invoice_detail, name="invoice_detail"),
+    path("factures/<int:pk>/ligne/ajouter/", views.invoice_add_line, name="invoice_add_line"),
+    path("factures/<int:pk>/ligne/<int:line_pk>/supprimer/", views.invoice_line_delete, name="invoice_line_delete"),
+    path("factures/<int:pk>/statut/<str:status>/", views.invoice_set_status, name="invoice_set_status"),
+    path("factures/<int:pk>/supprimer/", views.invoice_delete, name="invoice_delete"),
 ]

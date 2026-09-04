@@ -51,6 +51,12 @@
         <button class="w-full bg-yellow-500 text-white text-sm font-bold py-2 rounded-lg hover:bg-yellow-600">📦 {% tr "Marquer expédiée" "Mark as shipped" %}</button>
       </form>
       {% endif %}
+      {% if order.status == 'validated' or order.status == 'shipped' or order.status == 'delivered' %}
+      <form method="post" action="{% url 'supplier_portal:invoice_from_order' order.pk %}">
+        {% csrf_token %}
+        <button class="w-full bg-[#1A1A1A] text-white text-sm font-bold py-2 rounded-lg hover:bg-black">🧾 {% tr "Facturer cette commande" "Invoice this order" %}</button>
+      </form>
+      {% endif %}
     </div>
   </div>
 </div>

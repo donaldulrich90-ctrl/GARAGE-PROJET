@@ -1,0 +1,156 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{{ invoice.reference }}{% endblock %}
+{% block page_title %}{% tr "Facture" "Invoice" %} {{ invoice.reference }}{% endblock %}
+{% block header_actions %}
+  <button onclick="window.print()" class="bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 font-semibold">🖨 {% tr "Imprimer / PDF" "Print / PDF" %}</button>
+  <a href="{% url 'supplier_portal:invoice_list' %}" class="bg-[#1A1A1A] text-white text-sm px-4 py-2 rounded-lg font-semibold no-print">← {% tr "Retour" "Back" %}</a>
+{% endblock %}
+
+{% block content %}
+<style>
+  @media print {
+    aside, header, .no-print { display: none !important; }
+    main { padding: 0 !important; }
+    body { background: white !important; }
+    .print-card { border: none !important; box-shadow: none !important; }
+  }
+</style>
+
+<!-- Barre d'actions (statut) -->
+<div class="no-print mb-4 flex flex-wrap items-center gap-2">
+  <span class="text-sm text-gray-500 mr-1">{% tr "Statut :" "Status:" %}</span>
+  {% if invoice.status == 'paid' %}<span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-800 font-bold">{% tr "Payée" "Paid" %}</span>
+  {% elif invoice.status == 'sent' %}<span class="px-3 py-1 rounded-full text-xs bg-blue-100 text-blue-800 font-bold">{% tr "Envoyée" "Sent" %}</span>
+  {% else %}<span class="px-3 py-1 rounded-full text-xs bg-gray-200 text-gray-700 font-bold">{% tr "Brouillon" "Draft" %}</span>{% endif %}
+
+  <div class="flex-1"></div>
+
+  {% if invoice.status == 'draft' %}
+  <form method="post" action="{% url 'supplier_portal:invoice_set_status' invoice.pk 'sent' %}">{% csrf_token %}
+    <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">{% tr "Marquer envoyée" "Mark as sent" %}</button>
+  </form>
+  {% endif %}
+  {% if invoice.status == 'sent' %}
+  <form method="post" action="{% url 'supplier_portal:invoice_set_status' invoice.pk 'paid' %}">{% csrf_token %}
+    <button class="bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-semibold hover:bg-green-700">{% tr "Marquer payée" "Mark as paid" %}</button>
+  </form>
+  <form method="post" action="{% url 'supplier_portal:invoice_set_status' invoice.pk 'draft' %}">{% csrf_token %}
+    <button class="bg-white border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg font-semibold">{% tr "Repasser en brouillon" "Back to draft" %}</button>
+  </form>
+  {% endif %}
+  {% if invoice.status == 'paid' %}
+  <form method="post" action="{% url 'supplier_portal:invoice_set_status' invoice.pk 'sent' %}">{% csrf_token %}
+    <button class="bg-white border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg font-semibold">{% tr "Annuler le paiement" "Undo payment" %}</button>
+  </form>
+  {% endif %}
+  {% if can_edit %}
+  <form method="post" action="{% url 'supplier_portal:invoice_delete' invoice.pk %}" onsubmit="return confirm('{% tr "Supprimer définitivement cette facture ?" "Delete this invoice permanently?" %}');">{% csrf_token %}
+    <button class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2 rounded-lg font-semibold hover:bg-red-100">{% tr "Supprimer" "Delete" %}</button>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Facture imprimable -->
+<div class="print-card bg-white border border-gray-200 rounded-xl p-6 md:p-8 max-w-3xl">
+  <div class="flex justify-between items-start gap-4 border-b border-gray-200 pb-5 mb-5">
+    <div>
+      {% if request.user.supplier.logo %}<img src="{{ request.user.supplier.logo.url }}" alt="" class="h-14 mb-2 object-contain">{% endif %}
+      <div class="text-lg font-black text-[#1A1A1A]">{{ request.user.supplier.name }}</div>
+      <div class="text-xs text-gray-500">{% tr "Fournisseur" "Supplier" %}</div>
+    </div>
+    <div class="text-right">
+      <div class="text-2xl font-black text-[#1A1A1A]">{% tr "FACTURE" "INVOICE" %}</div>
+      <div class="text-sm font-mono font-semibold text-gray-700 mt-1">{{ invoice.reference }}</div>
+      <div class="text-xs text-gray-500 mt-2">{% tr "Émise le" "Issued" %} : {{ invoice.issued_at|date:"d/m/Y" }}</div>
+      {% if invoice.due_date %}<div class="text-xs text-gray-500">{% tr "Échéance" "Due" %} : {{ invoice.due_date|date:"d/m/Y" }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-sm">
+    <div>
+      <div class="text-xs uppercase text-gray-400 mb-1">{% tr "Facturé à" "Billed to" %}</div>
+      <div class="font-semibold">{{ invoice.garage.name }}</div>
+    </div>
+    {% if invoice.order %}
+    <div class="sm:text-right">
+      <div class="text-xs uppercase text-gray-400 mb-1">{% tr "Commande d'origine" "Source order" %}</div>
+      <a href="{% url 'supplier_portal:order_detail' invoice.order.pk %}" class="font-mono text-blue-600 no-print">{{ invoice.order.reference }}</a>
+      <span class="font-mono hidden print:inline">{{ invoice.order.reference }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <table class="w-full text-sm mb-4">
+    <thead><tr class="border-b-2 border-gray-300 text-xs uppercase text-gray-500">
+      <th class="py-2 text-left">{% tr "Désignation" "Description" %}</th>
+      <th class="py-2 text-left">G-CODE</th>
+      <th class="py-2 text-right">{% tr "P.U." "Unit" %}</th>
+      <th class="py-2 text-right">{% tr "Qté" "Qty" %}</th>
+      <th class="py-2 text-right">{% tr "Total" "Total" %}</th>
+      {% if can_edit %}<th class="py-2 text-right no-print"></th>{% endif %}
+    </tr></thead>
+    <tbody>
+      {% for line in lines %}
+      <tr class="border-b border-gray-100">
+        <td class="py-2">{{ line.description }}</td>
+        <td class="py-2 font-mono text-xs text-gray-500">{{ line.g_code|default:"—" }}</td>
+        <td class="py-2 text-right">{{ line.unit_price|floatformat:0 }}</td>
+        <td class="py-2 text-right">{{ line.quantity }}</td>
+        <td class="py-2 text-right font-semibold">{{ line.line_total|floatformat:0 }}</td>
+        {% if can_edit %}
+        <td class="py-2 text-right no-print">
+          <form method="post" action="{% url 'supplier_portal:invoice_line_delete' invoice.pk line.pk %}" class="inline">{% csrf_token %}
+            <button class="text-red-500 hover:text-red-700 text-xs">✕</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="py-6 text-center text-gray-400">{% tr "Aucune ligne." "No lines." %}</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr class="border-t-2 border-gray-300">
+      <td colspan="4" class="py-3 text-right font-bold uppercase text-xs text-gray-500">{% tr "Total à payer" "Total due" %}</td>
+      <td class="py-3 text-right text-lg font-black text-[#1A1A1A]">{{ invoice.total|floatformat:0 }} FCFA</td>
+      {% if can_edit %}<td class="no-print"></td>{% endif %}
+    </tr></tfoot>
+  </table>
+
+  {% if invoice.notes %}
+  <div class="mt-4 text-sm text-gray-600 border-t border-gray-100 pt-4">
+    <div class="text-xs uppercase text-gray-400 mb-1">{% tr "Notes" "Notes" %}</div>
+    {{ invoice.notes|linebreaksbr }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Ajout de ligne (brouillon seulement) -->
+{% if can_edit %}
+<div class="no-print mt-5 bg-white border border-gray-200 rounded-xl p-5 max-w-3xl">
+  <div class="text-sm font-bold text-gray-700 mb-3">+ {% tr "Ajouter une ligne" "Add a line" %}</div>
+  <form method="post" action="{% url 'supplier_portal:invoice_add_line' invoice.pk %}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+    {% csrf_token %}
+    <div class="sm:col-span-5">
+      <label class="block text-xs text-gray-500 mb-1">{% tr "Désignation" "Description" %} *</label>
+      <input type="text" name="description" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="sm:col-span-3">
+      <label class="block text-xs text-gray-500 mb-1">G-CODE</label>
+      <input type="text" name="g_code" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="sm:col-span-2">
+      <label class="block text-xs text-gray-500 mb-1">{% tr "Prix U." "Unit price" %} *</label>
+      <input type="number" name="unit_price" min="0" step="1" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="sm:col-span-1">
+      <label class="block text-xs text-gray-500 mb-1">{% tr "Qté" "Qty" %}</label>
+      <input type="number" name="quantity" min="1" step="1" value="1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="sm:col-span-1">
+      <button class="w-full bg-[#1A1A1A] text-white px-3 py-2 rounded-lg text-sm font-semibold">+</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
