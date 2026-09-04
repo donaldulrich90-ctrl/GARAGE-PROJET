@@ -9,11 +9,12 @@ from core.i18n import tr
 from core.models import TenantModel, TimeStampedModel, gen_reference
 
 
-class Supplier(TenantModel):
+class Supplier(TimeStampedModel):
     """
-    Fournisseur de pièces pour un garage. Le flag is_faest distingue
-    FAEST comme fournisseur natif intégré à la plateforme (canal de vente
-    privilégié), des autres fournisseurs locaux du garage.
+    Fournisseur de pièces INDÉPENDANT de la plateforme (pas rattaché à un
+    garage). Chaque fournisseur a son propre compte et sa propre gestion ;
+    il approvisionne les garages via des commandes. Le flag is_faest
+    distingue FAEST comme fournisseur natif intégré (canal privilégié).
     """
 
     name = models.CharField(max_length=150)
@@ -99,7 +100,7 @@ class Part(TenantModel):
         return self.quantity_in_stock <= self.alert_threshold
 
 
-class SupplierPart(TenantModel):
+class SupplierPart(TimeStampedModel):
     """
     Offre d'un fournisseur pour une pièce du catalogue de référence :
     prix pratiqué + stock disponible chez le fournisseur + délai de livraison.
@@ -146,8 +147,8 @@ class SupplierPart(TenantModel):
         verbose_name_plural = "Offres fournisseurs"
         constraints = [
             models.UniqueConstraint(
-                fields=["garage", "supplier", "catalog_part"],
-                name="unique_supplier_part_per_garage",
+                fields=["supplier", "catalog_part"],
+                name="unique_supplier_part_per_supplier",
             ),
         ]
 

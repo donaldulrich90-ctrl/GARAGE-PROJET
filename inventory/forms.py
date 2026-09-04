@@ -36,7 +36,7 @@ class PartForm(forms.ModelForm):
     def __init__(self, *args, garage=None, **kwargs):
         super().__init__(*args, **kwargs)
         if garage:
-            self.fields['supplier'].queryset = Supplier.objects.for_garage(garage)
+            self.fields['supplier'].queryset = Supplier.objects.all()
         self.fields['supplier'].required = False
         self.fields['catalog_part'].required = False
         self.fields['catalog_part'].queryset = CatalogPart.objects.select_related('category').order_by('name')

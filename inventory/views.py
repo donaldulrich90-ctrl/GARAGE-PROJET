@@ -72,7 +72,8 @@ class SupplierListView(GarageRequiredMixin, ListView):
     context_object_name = 'suppliers'
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        # Marketplace : tous les fournisseurs indépendants de la plateforme.
+        qs = Supplier.objects.all()
         q = self.request.GET.get('q', '').strip()
         if q:
             qs = qs.filter(name__icontains=q)
@@ -116,7 +117,7 @@ class SupplierPartListView(GarageRequiredMixin, ListView):
     paginate_by = 50
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related('supplier', 'catalog_part', 'catalog_part__category')
+        qs = SupplierPart.objects.all().select_related('supplier', 'catalog_part', 'catalog_part__category')
         q = self.request.GET.get('q', '').strip()
         supplier_id = self.request.GET.get('supplier', '')
         if q:
@@ -129,7 +130,7 @@ class SupplierPartListView(GarageRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['q'] = self.request.GET.get('q', '')
         ctx['selected_supplier'] = self.request.GET.get('supplier', '')
-        ctx['suppliers'] = Supplier.objects.for_garage(self.garage).order_by('name')
+        ctx['suppliers'] = Supplier.objects.all().order_by('name')
         return ctx
 
 
@@ -181,7 +182,7 @@ class SupplierCatalogView(GarageRequiredMixin, DetailView):
     context_object_name = 'supplier'
 
     def get_queryset(self):
-        return Supplier.objects.for_garage(self.garage)
+        return Supplier.objects.all()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -211,7 +212,7 @@ class SupplierOrderAddLineView(GarageRequiredMixin, DetailView):
     http_method_names = ['post']
 
     def get_queryset(self):
-        return SupplierPart.objects.for_garage(self.garage).select_related('supplier', 'catalog_part')
+        return SupplierPart.objects.all().select_related('supplier', 'catalog_part')
 
     def post(self, request, *args, **kwargs):
         offer = self.get_object()
@@ -302,9 +303,9 @@ class PartSearchView(GarageRequiredMixin, ListView):
         qs = CatalogPart.objects.select_related('category').prefetch_related(
             Prefetch(
                 'supplier_offers',
-                queryset=SupplierPart.objects.filter(
-                    garage=self.garage,
-                ).select_related('supplier').order_by('unit_price'),
+                queryset=SupplierPart.objects.select_related(
+                    'supplier'
+                ).order_by('unit_price'),
                 to_attr='offers_for_garage',
             ),
         )
@@ -322,14 +323,11 @@ class PartSearchView(GarageRequiredMixin, ListView):
         if universal_only:
             qs = qs.filter(is_universal=True)
         if available_only:
-            qs = qs.filter(supplier_offers__garage=self.garage).distinct()
+            qs = qs.filter(supplier_offers__isnull=False).distinct()
 
         # Trier: pièces qui ont des offres d'abord, puis alphabétique
         return qs.annotate(
-            has_offers=Count(
-                'supplier_offers',
-                filter=Q(supplier_offers__garage=self.garage),
-            ),
+            has_offers=Count('supplier_offers'),
         ).order_by('-has_offers', 'name')
 
     def get_context_data(self, **kwargs):
@@ -357,7 +355,7 @@ class CatalogPartCompareView(GarageRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        offers = SupplierPart.objects.for_garage(self.garage).filter(
+        offers = SupplierPart.objects.filter(
             catalog_part=self.object
         ).select_related('supplier').order_by('unit_price')
         ctx['offers'] = offers

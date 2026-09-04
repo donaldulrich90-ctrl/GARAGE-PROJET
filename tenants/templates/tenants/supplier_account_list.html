@@ -1,0 +1,71 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Fournisseurs — Plateforme{% endblock %}
+{% block page_title %}Fournisseurs de la plateforme{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'platform_supplier_create' %}"
+     class="bg-[#FFCD11] text-[#1A1A1A] text-sm px-4 py-2 rounded-lg hover:bg-[#E6B800] transition-colors font-bold">
+    + Nouveau fournisseur
+  </a>
+{% endblock %}
+
+{% block content %}
+<p class="text-sm text-gray-500 mb-4">
+  Comptes fournisseurs indépendants. Chacun gère sa propre entreprise (stock, factures, dépenses) et approvisionne les garages du SaaS.
+</p>
+
+<form method="get" class="mb-4 flex gap-3">
+  <input type="text" name="q" value="{{ q }}" placeholder="Rechercher un fournisseur…"
+         class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm">
+  <button type="submit" class="bg-[#1A1A1A] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#2A2A2A] transition-colors font-semibold">
+    Rechercher
+  </button>
+</form>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="bg-[#1A1A1A] text-xs text-[#FFCD11] uppercase tracking-wider">
+        <th class="px-4 py-3 text-left">Fournisseur</th>
+        <th class="px-4 py-3 text-left">Ville</th>
+        <th class="px-4 py-3 text-left">Compte de connexion</th>
+        <th class="px-4 py-3 text-center">Pièces offertes</th>
+        <th class="px-4 py-3 text-center">Commandes reçues</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for supplier in suppliers %}
+      <tr class="hover:bg-[#FFFBE0] transition-colors">
+        <td class="px-4 py-3">
+          <div class="font-bold text-[#1A1A1A]">
+            {{ supplier.name }}
+            {% if supplier.is_faest %}<span class="ml-2 bg-[#FFCD11] text-[#1A1A1A] text-xs px-2 py-0.5 rounded-full font-bold">FAEST</span>{% endif %}
+          </div>
+          {% if supplier.phone %}<div class="text-xs text-gray-400">{{ supplier.phone }}</div>{% endif %}
+        </td>
+        <td class="px-4 py-3 text-gray-600">{{ supplier.city|default:"—" }}</td>
+        <td class="px-4 py-3">
+          {% with account=supplier.users.first %}
+            {% if account %}
+            <span class="font-mono text-xs bg-blue-50 text-blue-800 px-2 py-0.5 rounded">{{ account.username }}</span>
+            {% else %}
+            <span class="text-xs text-red-500">Aucun compte</span>
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td class="px-4 py-3 text-center">
+          <span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-bold">{{ supplier.n_offers }}</span>
+        </td>
+        <td class="px-4 py-3 text-center">
+          <span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded-full font-bold">{{ supplier.n_orders }}</span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="px-4 py-8 text-center text-gray-400">Aucun fournisseur pour le moment. Cliquez sur « + Nouveau fournisseur » pour en créer un.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

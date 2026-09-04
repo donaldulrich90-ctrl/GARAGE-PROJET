@@ -137,7 +137,7 @@ class SupplierUserCreateForm(UserCreationForm):
 
     def clean_supplier_name(self):
         name = self.cleaned_data["supplier_name"].strip()
-        if self.garage and Supplier.objects.filter(garage=self.garage, name__iexact=name).exists():
+        if Supplier.objects.filter(name__iexact=name).exists():
             raise forms.ValidationError(tr(
                 "Un fournisseur portant ce nom existe déjà. Modifiez sa fiche au lieu de créer un doublon.",
                 "A supplier with this name already exists. Edit that profile instead of creating a duplicate.",
@@ -146,7 +146,6 @@ class SupplierUserCreateForm(UserCreationForm):
 
     def save(self, garage, commit=True):
         supplier = Supplier(
-            garage=garage,
             name=self.cleaned_data["supplier_name"],
             contact_name=self.cleaned_data.get("supplier_contact_name", ""),
             phone=self.cleaned_data.get("supplier_phone", ""),

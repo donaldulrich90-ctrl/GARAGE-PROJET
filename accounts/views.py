@@ -77,7 +77,8 @@ def _require_garage_admin(request):
 
 
 def _users_for_garage(garage):
-    return User.objects.filter(Q(garage=garage) | Q(supplier__garage=garage)).distinct()
+    # Les fournisseurs sont désormais indépendants (hors staff du garage).
+    return User.objects.filter(garage=garage).distinct()
 
 
 @login_required

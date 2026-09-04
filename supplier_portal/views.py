@@ -172,9 +172,6 @@ class MyOfferCreateView(SupplierRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.supplier = self.supplier
-        # Le SupplierPart hérite du garage — mais dans le portail fournisseur,
-        # le supplier n'est rattaché qu'à un seul garage (le sien à l'origine).
-        form.instance.garage = self.supplier.garage
         messages.success(self.request, tr(
             "Pièce ajoutée à votre stock.", "Part added to your stock."
         ))
@@ -590,16 +587,14 @@ def order_ship(request, pk):
 
 
 def _supplier_client_garages(supplier):
-    """Garages que ce fournisseur peut facturer : ceux à qui il a déjà eu une
-    commande, plus son garage de rattachement d'origine. Renvoie un queryset."""
+    """Garages que ce fournisseur peut facturer : ceux à qui il a déjà eu
+    une commande sur la plateforme. Renvoie un queryset."""
     from tenants.models import Garage
 
     garage_ids = set(
         SupplierOrder.objects.filter(supplier=supplier)
         .values_list("garage_id", flat=True)
     )
-    if supplier.garage_id:
-        garage_ids.add(supplier.garage_id)
     return Garage.objects.filter(id__in=garage_ids).order_by("name")
 
 

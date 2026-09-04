@@ -129,3 +129,55 @@ def garage_supplier_create(request, pk):
     else:
         form = SupplierUserCreateForm(garage=garage)
     return render(request, "tenants/supplier_form.html", {"form": form, "garage": garage})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  FOURNISSEURS INDÉPENDANTS (back-office plateforme)
+#  Gestion des comptes fournisseurs sans passer par un garage : les fournisseurs
+#  sont des entités indépendantes qui approvisionnent les garages du SaaS.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@login_required
+def platform_supplier_list(request):
+    guard = _require_superuser(request)
+    if guard:
+        return guard
+    from django.db.models import Count
+    from inventory.models import Supplier
+
+    q = request.GET.get("q", "").strip()
+    suppliers = Supplier.objects.annotate(
+        n_offers=Count("catalog_offers", distinct=True),
+        n_orders=Count("orders_received", distinct=True),
+    ).prefetch_related("users").order_by("name")
+    if q:
+        suppliers = suppliers.filter(name__icontains=q)
+    return render(request, "tenants/supplier_account_list.html", {
+        "suppliers": suppliers,
+        "q": q,
+    })
+
+
+@login_required
+def platform_supplier_create(request):
+    """Crée un fournisseur indépendant (+ son compte portail), sans garage."""
+    guard = _require_superuser(request)
+    if guard:
+        return guard
+    from accounts.forms import SupplierUserCreateForm
+
+    if request.method == "POST":
+        form = SupplierUserCreateForm(request.POST, request.FILES, garage=None)
+        if form.is_valid():
+            with transaction.atomic():
+                user = form.save(garage=None)
+            messages.success(
+                request,
+                f"Fournisseur indépendant « {user.supplier.name} » créé "
+                f"(compte : {user.username}).",
+            )
+            return redirect("platform_supplier_list")
+    else:
+        form = SupplierUserCreateForm(garage=None)
+    return render(request, "tenants/supplier_account_form.html", {"form": form})

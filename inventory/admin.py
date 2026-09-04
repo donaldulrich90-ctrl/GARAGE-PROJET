@@ -8,9 +8,10 @@ from .models import (
 
 
 @admin.register(Supplier)
-class SupplierAdmin(TenantScopedAdmin, admin.ModelAdmin):
-    list_display = ("name", "is_faest", "phone", "garage")
-    list_filter = ("is_faest", "garage")
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_faest", "phone", "city")
+    list_filter = ("is_faest",)
+    search_fields = ("name", "phone", "email")
 
 
 @admin.register(SupplierExpense)
@@ -41,9 +42,9 @@ class StockMovementAdmin(TenantScopedAdmin, admin.ModelAdmin):
 
 
 @admin.register(SupplierPart)
-class SupplierPartAdmin(TenantScopedAdmin, admin.ModelAdmin):
-    list_display = ("supplier", "catalog_part", "g_code", "unit_price", "quantity_available", "lead_time_days", "garage")
-    list_filter = ("supplier", "garage")
+class SupplierPartAdmin(admin.ModelAdmin):
+    list_display = ("supplier", "catalog_part", "g_code", "unit_price", "quantity_available", "lead_time_days")
+    list_filter = ("supplier",)
     search_fields = ("catalog_part__name", "catalog_part__reference", "g_code", "supplier_reference")
 
 

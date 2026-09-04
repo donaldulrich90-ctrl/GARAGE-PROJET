@@ -21,13 +21,6 @@ def supplier_required(view_func):
                 "Access is restricted to supplier accounts.",
             ))
             return redirect("post_login_redirect")
-        if not u.supplier.garage.is_active:
-            messages.error(request, tr(
-                "Le compte du garage associé est désactivé.",
-                "The associated garage account is disabled.",
-            ))
-            logout(request)
-            return redirect("login")
         return view_func(request, *args, **kwargs)
 
     return _wrapped
@@ -46,13 +39,6 @@ class SupplierRequiredMixin:
                 "Access is restricted to supplier accounts.",
             ))
             return redirect("post_login_redirect")
-        if not u.supplier.garage.is_active:
-            messages.error(request, tr(
-                "Le compte du garage associé est désactivé.",
-                "The associated garage account is disabled.",
-            ))
-            logout(request)
-            return redirect("login")
         return super().dispatch(request, *args, **kwargs)
 
     @property
