@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.db import transaction
 
 from accounts.models import User
 from .forms import GarageCreateForm, GarageEditForm
@@ -47,6 +48,7 @@ def garage_create(request):
                 trial_ends_at=cd.get("trial_ends_at"),
                 faest_supplier_enabled=cd.get("faest_supplier_enabled", False),
             )
+            garage.feature_overrides = form.get_feature_overrides()
             if cd.get("signature"):
                 garage.signature = cd["signature"]
             if cd.get("cachet"):
@@ -104,3 +106,26 @@ def garage_toggle(request, pk):
         etat = "activé" if garage.is_active else "désactivé"
         messages.success(request, f"Garage « {garage.name} » {etat}.")
     return redirect("garage_list")
+
+
+@login_required
+def garage_supplier_create(request, pk):
+    """Le super-admin crée un fournisseur (+ son compte portail) pour un garage."""
+    guard = _require_superuser(request)
+    if guard:
+        return guard
+    from accounts.forms import SupplierUserCreateForm
+    garage = get_object_or_404(Garage, pk=pk)
+    if request.method == "POST":
+        form = SupplierUserCreateForm(request.POST, request.FILES, garage=garage)
+        if form.is_valid():
+            with transaction.atomic():
+                user = form.save(garage=garage)
+            messages.success(
+                request,
+                f"Fournisseur « {user.supplier.name} » créé (compte : {user.username}) pour {garage.name}.",
+            )
+            return redirect("garage_edit", pk=garage.pk)
+    else:
+        form = SupplierUserCreateForm(garage=garage)
+    return render(request, "tenants/supplier_form.html", {"form": form, "garage": garage})

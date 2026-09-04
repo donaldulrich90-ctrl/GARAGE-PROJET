@@ -23,8 +23,10 @@ def post_login_redirect(request):
     u = request.user
     if getattr(u, "is_supplier", False) and u.supplier_id:
         return redirect("supplier_portal:dashboard")
+    if u.is_superuser:
+        # Staff plateforme : back-office de gestion des garages.
+        return redirect("garage_list")
     if u.garage_id is None:
-        # Staff plateforme (superuser) : envoyer sur l'admin Django.
         return redirect("/admin/")
     return redirect("dashboard_home")
 

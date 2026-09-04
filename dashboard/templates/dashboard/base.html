@@ -106,6 +106,7 @@
         {% tr "Tableau à clés" "Key board" %}
       </a>
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Suivi" "Monitoring" %}</div>
+      {% if user.garage and "technical_visits" in user.garage.active_features %}
       <a href="{% url 'visit_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'visit' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -114,6 +115,8 @@
         </svg>
         {% tr "Visites techniques" "Technical inspections" %}
       </a>
+      {% endif %}
+      {% if user.garage and "insurance" in user.garage.active_features %}
       <a href="{% url 'insurance_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'insurance' in n or 'claim' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -122,6 +125,8 @@
         </svg>
         {% tr "Assurances" "Insurance" %}
       </a>
+      {% endif %}
+      {% if user.garage and "taxes" in user.garage.active_features %}
       <a href="{% url 'taxes:tax_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'tax' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -130,9 +135,11 @@
         </svg>
         {% tr "Taxes & Impôts" "Taxes" %}
       </a>
+      {% endif %}
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Atelier" "Workshop" %}</div>
       {% if user.is_garage_admin %}
+      {% if user.garage and "workshops" in user.garage.active_features %}
       <a href="{% url 'section_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'section' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -141,6 +148,7 @@
         </svg>
         {% tr "Sections atelier" "Workshop sections" %}
       </a>
+      {% endif %}
       {% endif %}
       <a href="{% url 'order_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
@@ -172,6 +180,7 @@
         </svg>
         {% tr "Fournisseurs" "Suppliers" %}
       </a>
+      {% if user.garage and "supplier_market" in user.garage.active_features %}
       <a href="{% url 'part_search' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if n == 'part_search' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -180,6 +189,8 @@
         </svg>
         {% tr "Rechercher une pièce" "Search for a part" %}
       </a>
+      {% endif %}
+      {% if user.garage and "supplier_market" in user.garage.active_features %}
       <a href="{% url 'supplier_part_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'supplier_part' in n or 'catalog_part' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -188,6 +199,8 @@
         </svg>
         {% tr "Offres fournisseurs" "Supplier offers" %}
       </a>
+      {% endif %}
+      {% if user.garage and "supplier_market" in user.garage.active_features %}
       <a href="{% url 'supplier_order_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'supplier_order' in n or 'supplier_catalog' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -196,6 +209,7 @@
         </svg>
         {% tr "Commandes fournisseur" "Supplier orders" %}
       </a>
+      {% endif %}
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Finance" "Finance" %}</div>
       <a href="{% url 'proforma_list' %}"
@@ -224,6 +238,7 @@
       </a>
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Messagerie" "Messaging" %}</div>
+      {% if user.garage and "messaging" in user.garage.active_features %}
       <a href="{% url 'wa_history' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if n and 'wa_' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -232,8 +247,10 @@
         </svg>
         {% tr "Messages WhatsApp" "WhatsApp messages" %}
       </a>
+      {% endif %}
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "RH & Rapports" "HR & Reports" %}</div>
+      {% if user.garage and "hr" in user.garage.active_features %}
       <a href="{% url 'employee_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'employee' in n or 'payroll' in n or 'payslip' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -242,6 +259,8 @@
         </svg>
         {% tr "Employés / Paie" "Employees / Payroll" %}
       </a>
+      {% endif %}
+      {% if user.garage and "reports" in user.garage.active_features %}
       <a href="{% url 'bilan' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if n == 'bilan' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -250,6 +269,7 @@
         </svg>
         {% tr "Bilans / Rapports" "Statements / Reports" %}
       </a>
+      {% endif %}
 
       {% if user.is_superuser %}
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Plateforme" "Platform" %}</div>

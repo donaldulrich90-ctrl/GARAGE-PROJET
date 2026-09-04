@@ -66,6 +66,13 @@ class Garage(TimeStampedModel):
         help_text="Nombre de crochets/emplacements numérotés sur le tableau à clés du garage.",
     )
 
+    feature_overrides = models.JSONField(
+        "Options forcées (surcharge)",
+        default=dict,
+        blank=True,
+        help_text="Surcharge par garage (ex: messaging=true, hr=false). Vide = on suit le plan.",
+    )
+
     class Meta:
         verbose_name = "Garage"
         verbose_name_plural = "Garages"
@@ -78,3 +85,16 @@ class Garage(TimeStampedModel):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    def has_feature(self, key):
+        """Option active pour ce garage ? Surcharge si définie, sinon le plan."""
+        from tenants.features import default_features_for_plan
+        overrides = self.feature_overrides or {}
+        if key in overrides:
+            return bool(overrides[key])
+        return key in default_features_for_plan(self.plan)
+
+    @property
+    def active_features(self):
+        from tenants.features import FEATURES
+        return {k for k in FEATURES if self.has_feature(k)}

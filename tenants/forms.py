@@ -1,12 +1,47 @@
 from django import forms
 
+from .features import FEATURES
 from .models import Garage
 
 _INPUT = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFCD11]"
 _SELECT = _INPUT + " bg-white"
 
+# Choix tri-état pour chaque option : suit le plan, forcé activé, forcé désactivé.
+_FEAT_CHOICES = [("auto", "Selon le plan"), ("on", "Activé"), ("off", "Désactivé")]
+_FEAT_SELECT = ("border border-gray-300 rounded-lg px-2 py-1 text-xs bg-white "
+                "focus:outline-none focus:ring-2 focus:ring-[#FFCD11]")
 
-class GarageCreateForm(forms.Form):
+
+class _FeatureFieldsMixin:
+    """Ajoute un champ tri-état par option (feat_<clé>) et calcule les surcharges."""
+
+    def add_feature_fields(self, overrides=None):
+        overrides = overrides or {}
+        for key, label in FEATURES.items():
+            initial = "auto"
+            if key in overrides:
+                initial = "on" if overrides[key] else "off"
+            self.fields[f"feat_{key}"] = forms.ChoiceField(
+                label=label,
+                required=False,
+                choices=_FEAT_CHOICES,
+                initial=initial,
+                widget=forms.Select(attrs={"class": _FEAT_SELECT}),
+            )
+
+    def get_feature_overrides(self):
+        overrides = {}
+        for key in FEATURES:
+            val = self.cleaned_data.get(f"feat_{key}", "auto")
+            if val == "on":
+                overrides[key] = True
+            elif val == "off":
+                overrides[key] = False
+            # "auto" -> on n'enregistre rien (on suit le plan)
+        return overrides
+
+
+class GarageCreateForm(_FeatureFieldsMixin, forms.Form):
     # Informations du garage
     name = forms.CharField(max_length=150, label="Nom du garage", widget=forms.TextInput(attrs={"class": _INPUT}))
     city = forms.CharField(max_length=100, required=False, label="Ville", widget=forms.TextInput(attrs={"class": _INPUT}))
@@ -34,6 +69,10 @@ class GarageCreateForm(forms.Form):
         widget=forms.PasswordInput(attrs={"class": _INPUT}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_feature_fields()
+
     def clean_admin_username(self):
         from accounts.models import User
         username = self.cleaned_data["admin_username"]
@@ -42,7 +81,7 @@ class GarageCreateForm(forms.Form):
         return username
 
 
-class GarageEditForm(forms.ModelForm):
+class GarageEditForm(_FeatureFieldsMixin, forms.ModelForm):
     class Meta:
         model = Garage
         fields = (
@@ -63,3 +102,15 @@ class GarageEditForm(forms.ModelForm):
             "plan": forms.Select(attrs={"class": _SELECT}),
             "trial_ends_at": forms.DateInput(attrs={"class": _INPUT, "type": "date"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        overrides = self.instance.feature_overrides if self.instance and self.instance.pk else None
+        self.add_feature_fields(overrides)
+
+    def save(self, commit=True):
+        garage = super().save(commit=False)
+        garage.feature_overrides = self.get_feature_overrides()
+        if commit:
+            garage.save()
+        return garage

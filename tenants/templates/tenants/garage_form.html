@@ -100,6 +100,25 @@
       </div>
     </div>
 
+    <!-- Options d'abonnement -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="font-bold text-[#1A1A1A] text-sm mb-1 flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-green-500 inline-block"></span>
+        Options d'abonnement
+      </h2>
+      <p class="text-xs text-gray-500 mb-4">« Selon le plan » applique les options par défaut du plan choisi. Forcez « Activé » / « Désactivé » pour surcharger ce garage.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {% for f in form %}
+          {% if f.name|slice:":5" == "feat_" %}
+          <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+            <span class="text-sm text-gray-700">{{ f.label }}</span>
+            {{ f }}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
     {% if form.admin_username %}
     <!-- Compte administrateur -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -145,6 +164,15 @@
       </a>
     </div>
   </form>
+
+  {% if garage %}
+  <div class="flex flex-wrap gap-3">
+    <a href="{% url 'garage_supplier_create' garage.pk %}"
+       class="inline-flex items-center gap-2 py-2 px-4 text-sm bg-[#1A1A1A] text-white rounded-lg hover:bg-black transition-colors">
+      + Créer un compte fournisseur
+    </a>
+  </div>
+  {% endif %}
 
   <!-- Liste des utilisateurs du garage (mode édition) -->
   {% if staff %}
