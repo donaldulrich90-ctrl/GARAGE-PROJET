@@ -51,6 +51,14 @@
          class="px-3 py-2.5 rounded-lg {% if 'invoice' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
         {% tr "Factures" "Invoices" %}
       </a>
+      <a href="{% url 'chat:supplier_inbox' %}"
+         class="px-3 py-2.5 rounded-lg {% if n == 'chat' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Messagerie" "Messages" %}
+      </a>
+      <a href="{% url 'supplier_portal:activity_log' %}"
+         class="px-3 py-2.5 rounded-lg {% if n == 'activity' %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
+        {% tr "Historique" "History" %}
+      </a>
       <a href="{% url 'supplier_portal:expense_list' %}"
          class="px-3 py-2.5 rounded-lg {% if 'expense' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
         {% tr "Dépenses" "Expenses" %}

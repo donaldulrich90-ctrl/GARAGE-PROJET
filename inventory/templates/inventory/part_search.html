@@ -26,6 +26,9 @@
         <option value="{{ m.pk }}" {% if selected_make == m.pk|stringformat:"s" %}selected{% endif %}>{{ m.name }}</option>
       {% endfor %}
     </select>
+    <input type="number" name="year" value="{{ selected_year }}" placeholder="Année"
+           min="1950" max="2100"
+           class="w-28 border border-gray-300 rounded-lg px-3 py-1.5 text-sm" title="Année du véhicule">
     <label class="inline-flex items-center gap-1.5 text-gray-600">
       <input type="checkbox" name="universal" value="1" {% if universal_only %}checked{% endif %}>
       Universelles uniquement
@@ -34,7 +37,7 @@
       <input type="checkbox" name="available" value="1" {% if available_only %}checked{% endif %}>
       Avec offres fournisseurs seulement
     </label>
-    {% if q or selected_category or selected_make or universal_only or available_only %}
+    {% if q or selected_category or selected_make or selected_year or universal_only or available_only %}
     <a href="{% url 'part_search' %}" class="text-xs text-gray-500 hover:text-gray-700 ml-auto">✕ Réinitialiser</a>
     {% endif %}
   </div>
@@ -133,12 +136,12 @@
 {% if page_obj.has_other_pages %}
 <div class="mt-6 flex items-center justify-center gap-2 text-sm">
   {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
+    <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
        class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">← Précédent</a>
   {% endif %}
   <span class="text-gray-500">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
   {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
+    <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_make %}&make={{ selected_make }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}{% if universal_only %}&universal=1{% endif %}{% if available_only %}&available=1{% endif %}"
        class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">Suivant →</a>
   {% endif %}
 </div>

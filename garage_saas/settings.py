@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'supplier_portal',
     'workshops',
     'diagnostics',
+    'chat',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

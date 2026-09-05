@@ -1,0 +1,49 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Discussion" "Chat" %} — {{ garage.name }}{% endblock %}
+{% block page_title %}💬 {{ garage.name }}{% endblock %}
+{% block header_actions %}
+  <a href="{% url 'chat:supplier_inbox' %}" class="text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg px-3 py-1.5">← {% tr "Toutes les discussions" "All chats" %}</a>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl border border-gray-200 flex flex-col" style="height:70vh">
+  <div id="msgs" class="flex-1 overflow-y-auto p-4 space-y-3">
+    {% for m in chat_messages %}
+      {% if m.from_supplier %}
+      <div class="flex justify-end">
+        <div class="max-w-[75%]">
+          <div class="bg-[#FFCD11] text-[#1A1A1A] rounded-2xl rounded-tr-sm px-4 py-2 text-sm">
+            {% if m.image %}<a href="{{ m.image.url }}" target="_blank"><img src="{{ m.image.url }}" class="rounded-lg mb-1 max-h-64"></a>{% endif %}
+            {% if m.body %}<div class="whitespace-pre-wrap">{{ m.body }}</div>{% endif %}
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5 mr-1 text-right">{% tr "Vous" "You" %} · {{ m.created_at|date:"d/m H:i" }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="flex justify-start">
+        <div class="max-w-[75%]">
+          <div class="bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm px-4 py-2 text-sm">
+            {% if m.image %}<a href="{{ m.image.url }}" target="_blank"><img src="{{ m.image.url }}" class="rounded-lg mb-1 max-h-64"></a>{% endif %}
+            {% if m.body %}<div class="whitespace-pre-wrap">{{ m.body }}</div>{% endif %}
+          </div>
+          <div class="text-[10px] text-gray-400 mt-0.5 ml-1">{{ m.sender.get_full_name|default:m.sender.username|default:garage.name }} · {{ m.created_at|date:"d/m H:i" }}</div>
+        </div>
+      </div>
+      {% endif %}
+    {% empty %}
+      <div class="text-center text-gray-400 text-sm py-10">{% tr "Aucun message. Écrivez le premier !" "No message yet. Write the first one!" %}</div>
+    {% endfor %}
+  </div>
+  <form method="post" enctype="multipart/form-data" class="border-t border-gray-100 p-3 flex items-end gap-2">
+    {% csrf_token %}
+    {{ form.body }}
+    <label class="cursor-pointer text-gray-500 hover:text-[#7A5C00] flex-shrink-0 px-2" title="{% tr 'Joindre une photo' 'Attach a photo' %}">
+      📷 {{ form.image }}
+    </label>
+    <button type="submit" class="bg-[#1A1A1A] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#2A2A2A] flex-shrink-0">{% tr "Envoyer" "Send" %}</button>
+  </form>
+  {% if form.errors %}<div class="px-4 pb-2 text-xs text-red-600">{{ form.non_field_errors|join:", " }}</div>{% endif %}
+</div>
+<script>var m=document.getElementById('msgs');if(m)m.scrollTop=m.scrollHeight;</script>
+{% endblock %}

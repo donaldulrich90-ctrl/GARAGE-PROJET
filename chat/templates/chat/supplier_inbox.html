@@ -1,0 +1,33 @@
+{% extends "supplier_portal/base.html" %}
+{% load bilingual %}
+{% block title %}{% tr "Messagerie" "Messages" %}{% endblock %}
+{% block page_title %}{% tr "Messagerie garages" "Garage messages" %}{% endblock %}
+
+{% block content %}
+<p class="text-sm text-gray-500 mb-4">
+  {% tr "Échangez avec les mécaniciens des garages : disponibilité d'une pièce, conseils, photos." "Chat with garage mechanics: part availability, advice, photos." %}
+</p>
+
+<div class="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+  {% for row in rows %}
+  <a href="{% url 'chat:supplier_thread' row.garage.pk %}"
+     class="flex items-center gap-4 px-4 py-3 hover:bg-[#FFFBE0] transition-colors">
+    <div class="h-10 w-10 rounded-full bg-[#1A1A1A] text-[#FFCD11] flex items-center justify-center font-bold flex-shrink-0">
+      {{ row.garage.name|slice:":1"|upper }}
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="font-semibold text-[#1A1A1A]">{{ row.garage.name }}</div>
+      <div class="text-xs text-gray-400 truncate">
+        {% if row.last %}{% if row.last.from_supplier %}{% tr "Vous : " "You: " %}{% endif %}{% if row.last.body %}{{ row.last.body|truncatechars:60 }}{% else %}📷 Photo{% endif %}{% else %}{% tr "Démarrer la discussion…" "Start the conversation…" %}{% endif %}
+      </div>
+    </div>
+    <div class="text-right flex-shrink-0">
+      {% if row.last %}<div class="text-[11px] text-gray-400">{{ row.last.created_at|date:"d/m H:i" }}</div>{% endif %}
+      {% if row.unread %}<span class="inline-block mt-1 bg-red-600 text-white text-[11px] px-2 py-0.5 rounded-full font-bold">{{ row.unread }}</span>{% endif %}
+    </div>
+  </a>
+  {% empty %}
+  <div class="px-4 py-10 text-center text-gray-400">{% tr "Aucun garage pour le moment. Les discussions apparaîtront ici dès qu'un garage vous commande ou vous écrit." "No garage yet. Conversations will appear once a garage orders from you or writes to you." %}</div>
+  {% endfor %}
+</div>
+{% endblock %}

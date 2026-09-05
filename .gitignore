@@ -12,3 +12,8 @@ test_local.sqlite3-journal
 push_changes.bat
 patch_settings.ps1
 commit_message.txt
+
+# Fichiers temporaires de validation (Cowork)
+_codecheck.tgz
+_check_bundle.tar.gz
+*.tgz

@@ -35,4 +35,6 @@ urlpatterns = [
     path("factures/<int:pk>/ligne/<int:line_pk>/supprimer/", views.invoice_line_delete, name="invoice_line_delete"),
     path("factures/<int:pk>/statut/<str:status>/", views.invoice_set_status, name="invoice_set_status"),
     path("factures/<int:pk>/supprimer/", views.invoice_delete, name="invoice_delete"),
+    # Historique / journal d'activité
+    path("historique/", views.activity_log, name="activity_log"),
 ]

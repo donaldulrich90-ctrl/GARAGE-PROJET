@@ -150,18 +150,63 @@ class DashboardView(SupplierRequiredMixin, TemplateView):
 class MyOffersListView(SupplierRequiredMixin, ListView):
     template_name = "supplier_portal/offer_list.html"
     context_object_name = "offers"
-    paginate_by = 50
 
     def get_queryset(self):
-        qs = SupplierPart.objects.filter(supplier=self.supplier).select_related("catalog_part", "catalog_part__category")
+        qs = (
+            SupplierPart.objects.filter(supplier=self.supplier)
+            .select_related("catalog_part", "catalog_part__category")
+            .prefetch_related("catalog_part__compatible_models__make")
+        )
         q = self.request.GET.get("q", "").strip()
+        cat = self.request.GET.get("category", "").strip()
+        make = self.request.GET.get("make", "").strip()
+        model = self.request.GET.get("model", "").strip()
         if q:
-            qs = qs.filter(catalog_part__name__icontains=q) | qs.filter(catalog_part__reference__icontains=q)
-        return qs.order_by("catalog_part__name")
+            qs = qs.filter(
+                Q(g_code__icontains=q)
+                | Q(catalog_part__reference__icontains=q)
+                | Q(catalog_part__name__icontains=q)
+                | Q(supplier_reference__icontains=q)
+            )
+        if cat:
+            qs = qs.filter(catalog_part__category_id=cat)
+        if make:
+            qs = qs.filter(catalog_part__compatible_models__make_id=make)
+        if model:
+            qs = qs.filter(catalog_part__compatible_models__id=model)
+        return qs.distinct().order_by(
+            "catalog_part__category__name", "catalog_part__name"
+        )
 
     def get_context_data(self, **kwargs):
+        from catalog.models import PartCategory, VehicleMake, VehicleModel
+
         ctx = super().get_context_data(**kwargs)
+        sup = self.supplier
         ctx["q"] = self.request.GET.get("q", "")
+        ctx["selected_category"] = self.request.GET.get("category", "")
+        ctx["selected_make"] = self.request.GET.get("make", "")
+        ctx["selected_model"] = self.request.GET.get("model", "")
+        # Les filtres ne proposent QUE ce que le fournisseur possède déjà :
+        # simple, sans options vides.
+        ctx["categories"] = (
+            PartCategory.objects
+            .filter(parts__supplier_offers__supplier=sup)
+            .distinct().order_by("name")
+        )
+        ctx["makes"] = (
+            VehicleMake.objects
+            .filter(models__compatible_parts__supplier_offers__supplier=sup)
+            .distinct().order_by("name")
+        )
+        models_qs = (
+            VehicleModel.objects
+            .filter(compatible_parts__supplier_offers__supplier=sup)
+            .distinct().select_related("make")
+        )
+        if ctx["selected_make"]:
+            models_qs = models_qs.filter(make_id=ctx["selected_make"])
+        ctx["models"] = models_qs.order_by("make__name", "name")
         return ctx
 
 
@@ -826,3 +871,54 @@ def invoice_delete(request, pk):
     invoice.delete()
     messages.success(request, tr("Facture supprimée.", "Invoice deleted."))
     return redirect("supplier_portal:invoice_list")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  HISTORIQUE / JOURNAL D'ACTIVITÉ DU FOURNISSEUR
+#  S'appuie sur le système d'audit global (core.AuditLog) : chaque création,
+#  modification ou suppression faite par un membre de l'équipe fournisseur est
+#  tracée automatiquement. Ici on la rend consultable par le fournisseur.
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@supplier_required
+def activity_log(request):
+    from django.core.paginator import Paginator
+    from core.models import AuditLog
+
+    supplier = request.user.supplier
+    team_ids = list(supplier.users.values_list("id", flat=True))
+    logs = (
+        AuditLog.objects.filter(user_id__in=team_ids)
+        .select_related("user")
+        .order_by("-created_at")
+    )
+    action = request.GET.get("action", "").strip()
+    if action in dict(AuditLog.ACTION_CHOICES):
+        logs = logs.filter(action=action)
+
+    paginator = Paginator(logs, 50)
+    page = paginator.get_page(request.GET.get("page"))
+
+    # Noms de modèles lisibles (les plus fréquents côté fournisseur)
+    friendly = {
+        "SupplierPart": tr("Pièce / offre", "Part / offer"),
+        "SupplierInvoice": tr("Facture", "Invoice"),
+        "SupplierInvoiceLine": tr("Ligne de facture", "Invoice line"),
+        "SupplierOrder": tr("Commande", "Order"),
+        "SupplierStockMovement": tr("Mouvement de stock", "Stock movement"),
+        "SupplierExpense": tr("Dépense", "Expense"),
+        "Supplier": tr("Fiche fournisseur", "Supplier profile"),
+        "User": tr("Compte", "Account"),
+    }
+    items = list(page.object_list)
+    for lg in items:
+        lg.friendly_name = friendly.get(lg.model_name, lg.model_name)
+    ctx = {
+        "n": "activity",
+        "page_obj": page,
+        "logs": items,
+        "action_filter": action,
+        "action_choices": AuditLog.ACTION_CHOICES,
+    }
+    return render(request, "supplier_portal/activity_log.html", ctx)

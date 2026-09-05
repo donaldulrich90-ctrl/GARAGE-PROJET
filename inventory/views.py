@@ -297,6 +297,7 @@ class PartSearchView(GarageRequiredMixin, ListView):
         q = self.request.GET.get('q', '').strip()
         category = self.request.GET.get('category', '')
         make = self.request.GET.get('make', '')
+        year = self.request.GET.get('year', '').strip()
         universal_only = self.request.GET.get('universal', '') == '1'
         available_only = self.request.GET.get('available', '') == '1'
 
@@ -320,6 +321,16 @@ class PartSearchView(GarageRequiredMixin, ListView):
             qs = qs.filter(category_id=category)
         if make:
             qs = qs.filter(compatible_models__make_id=make).distinct()
+        if year.isdigit():
+            y = int(year)
+            year_q = (
+                Q(compatible_models__year_from__lte=y)
+                | Q(compatible_models__year_from__isnull=True)
+            ) & (
+                Q(compatible_models__year_to__gte=y)
+                | Q(compatible_models__year_to__isnull=True)
+            )
+            qs = qs.filter(Q(is_universal=True) | year_q).distinct()
         if universal_only:
             qs = qs.filter(is_universal=True)
         if available_only:
@@ -336,6 +347,7 @@ class PartSearchView(GarageRequiredMixin, ListView):
         ctx['q'] = self.request.GET.get('q', '')
         ctx['selected_category'] = self.request.GET.get('category', '')
         ctx['selected_make'] = self.request.GET.get('make', '')
+        ctx['selected_year'] = self.request.GET.get('year', '')
         ctx['universal_only'] = self.request.GET.get('universal', '') == '1'
         ctx['available_only'] = self.request.GET.get('available', '') == '1'
         ctx['categories'] = PartCategory.objects.order_by('name')

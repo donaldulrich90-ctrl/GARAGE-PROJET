@@ -2,7 +2,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve as _media_serve
 
 from accounts.views import post_login_redirect
 
@@ -26,8 +27,16 @@ urlpatterns = [
     path("plateforme/", include("core.urls")),
     path("rapports/", include("dashboard.report_urls")),
     path("messages/", include("messaging.urls")),
+    path("messagerie/", include("chat.urls")),
     path("visites/", include("technical_visits.urls")),
     path("assurances/", include("insurance.urls")),
     path("taxes/", include("taxes.urls")),
     path("ateliers/", include("workshops.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Sert les fichiers média (photos du chat, logos, images pièces) même en
+# production. Convient à cette petite application ; les fichiers sont stockés
+# sur un volume persistant monté sur /app/media dans Coolify.
+urlpatterns += [
+    re_path(r"^media/(?P<path>.*)$", _media_serve, {"document_root": settings.MEDIA_ROOT}),
+]
