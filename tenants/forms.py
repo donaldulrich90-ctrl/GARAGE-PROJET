@@ -41,7 +41,40 @@ class _FeatureFieldsMixin:
         return overrides
 
 
-class GarageCreateForm(_FeatureFieldsMixin, forms.Form):
+_METIER_CHECK = "h-4 w-4 rounded accent-[#FFCD11]"
+
+
+class _MetierFieldsMixin:
+    """Ajoute une case a cocher par metier (section d'atelier) : metier_<CODE>."""
+
+    def add_metier_fields(self, garage=None):
+        from workshops.models import DEFAULT_SECTIONS, WorkshopSection
+        has_sections = False
+        active_codes = set()
+        if garage is not None and getattr(garage, "pk", None):
+            qs = WorkshopSection.objects.filter(garage=garage)
+            has_sections = qs.exists()
+            active_codes = set(qs.filter(is_active=True).values_list("code", flat=True))
+        for code, name, color, icon, order in DEFAULT_SECTIONS:
+            # Creation (aucune section encore) : tout coche par defaut.
+            # Edition : suit l'etat actif de la section existante.
+            initial = True if not has_sections else (code in active_codes)
+            self.fields[f"metier_{code}"] = forms.BooleanField(
+                label=f"{icon} {name}",
+                required=False,
+                initial=initial,
+                widget=forms.CheckboxInput(attrs={"class": _METIER_CHECK}),
+            )
+
+    def get_active_metiers(self):
+        from workshops.models import DEFAULT_SECTIONS
+        return {
+            code for code, *_rest in DEFAULT_SECTIONS
+            if self.cleaned_data.get(f"metier_{code}")
+        }
+
+
+class GarageCreateForm(_FeatureFieldsMixin, _MetierFieldsMixin, forms.Form):
     # Informations du garage
     name = forms.CharField(max_length=150, label="Nom du garage", widget=forms.TextInput(attrs={"class": _INPUT}))
     city = forms.CharField(max_length=100, required=False, label="Ville", widget=forms.TextInput(attrs={"class": _INPUT}))
@@ -72,6 +105,7 @@ class GarageCreateForm(_FeatureFieldsMixin, forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_feature_fields()
+        self.add_metier_fields()
 
     def clean_admin_username(self):
         from accounts.models import User
@@ -81,7 +115,7 @@ class GarageCreateForm(_FeatureFieldsMixin, forms.Form):
         return username
 
 
-class GarageEditForm(_FeatureFieldsMixin, forms.ModelForm):
+class GarageEditForm(_FeatureFieldsMixin, _MetierFieldsMixin, forms.ModelForm):
     class Meta:
         model = Garage
         fields = (
@@ -107,6 +141,7 @@ class GarageEditForm(_FeatureFieldsMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         overrides = self.instance.feature_overrides if self.instance and self.instance.pk else None
         self.add_feature_fields(overrides)
+        self.add_metier_fields(self.instance)
 
     def save(self, commit=True):
         garage = super().save(commit=False)

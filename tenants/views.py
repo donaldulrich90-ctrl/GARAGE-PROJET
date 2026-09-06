@@ -17,6 +17,22 @@ def _require_superuser(request):
     return None
 
 
+def _sync_garage_metiers(garage, active_codes):
+    """Cree/synchronise les sections d'atelier (metiers) d'un garage selon
+    les metiers coches. Cree les 4 sections par defaut si absentes, et active
+    seulement celles choisies."""
+    from workshops.models import DEFAULT_SECTIONS, WorkshopSection
+    for code, name, color, icon, order in DEFAULT_SECTIONS:
+        sec, _created = WorkshopSection.objects.get_or_create(
+            garage=garage, code=code,
+            defaults={"name": name, "color": color, "icon": icon, "display_order": order},
+        )
+        want = code in active_codes
+        if sec.is_active != want:
+            sec.is_active = want
+            sec.save(update_fields=["is_active", "updated_at"])
+
+
 @login_required
 def garage_list(request):
     guard = _require_superuser(request)
@@ -64,6 +80,7 @@ def garage_create(request):
                 is_staff=False,
                 is_superuser=False,
             )
+            _sync_garage_metiers(garage, form.get_active_metiers())
             messages.success(request, f"Garage « {garage.name} » créé avec son administrateur.")
             return redirect("garage_list")
     else:
@@ -82,6 +99,7 @@ def garage_edit(request, pk):
         form = GarageEditForm(request.POST, request.FILES, instance=garage)
         if form.is_valid():
             form.save()
+            _sync_garage_metiers(garage, form.get_active_metiers())
             messages.success(request, f"Garage « {garage.name} » mis à jour.")
             return redirect("garage_list")
     else:
