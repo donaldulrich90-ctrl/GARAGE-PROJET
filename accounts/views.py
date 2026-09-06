@@ -52,18 +52,27 @@ def garage_settings(request):
     if not request.user.is_garage_admin:
         messages.error(request, "Accès réservé à l'administrateur du garage.")
         return redirect("dashboard_home")
+    from tenants.features import FEATURES
     garage = request.user.garage
     if request.method == "POST":
         form = GarageSettingsForm(request.POST, request.FILES, instance=garage)
         if form.is_valid():
-            form.save()
+            garage = form.save()
+            # Modules actifs choisis par l'admin du garage (opt-out).
+            garage.feature_overrides = {
+                key: (request.POST.get(f"module_{key}") == "on") for key in FEATURES
+            }
+            garage.save(update_fields=["feature_overrides"])
             messages.success(request, "Informations du garage mises à jour.")
             return redirect("garage_settings")
         else:
             messages.error(request, "Veuillez corriger les erreurs ci-dessous.")
     else:
         form = GarageSettingsForm(instance=garage)
-    return render(request, "accounts/garage_settings.html", {"form": form, "garage": garage})
+    module_rows = [(key, label, garage.has_feature(key)) for key, label in FEATURES.items()]
+    return render(request, "accounts/garage_settings.html", {
+        "form": form, "garage": garage, "module_rows": module_rows,
+    })
 
 
 def _require_garage_admin(request):

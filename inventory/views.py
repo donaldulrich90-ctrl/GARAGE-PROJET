@@ -352,6 +352,18 @@ class PartSearchView(GarageRequiredMixin, ListView):
         ctx['available_only'] = self.request.GET.get('available', '') == '1'
         ctx['categories'] = PartCategory.objects.order_by('name')
         ctx['makes'] = VehicleMake.objects.order_by('name')
+        # Prix min / moyen / max par pièce d'après les offres fournisseurs
+        for part in ctx.get('catalog_parts', []):
+            offers = getattr(part, 'offers_for_garage', None) or []
+            prices = [o.unit_price for o in offers]
+            if prices:
+                part.price_min = min(prices)
+                part.price_max = max(prices)
+                part.price_avg = sum(prices) / len(prices)
+                part.offer_count = len(prices)
+            else:
+                part.price_min = part.price_max = part.price_avg = None
+                part.offer_count = 0
         return ctx
 
 

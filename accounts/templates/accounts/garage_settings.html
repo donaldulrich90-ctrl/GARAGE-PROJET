@@ -105,6 +105,19 @@
 
       </div>
 
+      <div class="pt-4 mt-2 border-t border-gray-100">
+        <h3 class="text-sm font-bold text-[#1A1A1A] mb-1">Modules actifs de ce garage</h3>
+        <p class="text-xs text-gray-400 mb-3">Décochez les modules que votre garage n'utilise pas : ils disparaîtront du menu. Par exemple, un garage de peinture peut ne garder que l'essentiel. Les métiers (Mécanique, Peinture, Électricité…) se gèrent dans « Sections atelier ».</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {% for key, label, enabled in module_rows %}
+          <label class="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 cursor-pointer hover:bg-[#FFFBE0]">
+            <input type="checkbox" name="module_{{ key }}" {% if enabled %}checked{% endif %} class="rounded accent-[#FFCD11]">
+            {{ label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
       <div class="pt-2 border-t border-gray-100">
         <button type="submit"
                 class="bg-[#FFCD11] hover:bg-[#E6B800] text-[#1A1A1A] font-bold py-2.5 px-6 rounded-lg text-sm transition-colors">

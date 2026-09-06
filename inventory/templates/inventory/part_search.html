@@ -62,14 +62,18 @@
         <div class="text-xs text-gray-400 font-mono mt-0.5">{{ part.reference }}</div>
       </div>
       <div class="text-right flex-shrink-0">
-        {% if part.offers_for_garage %}
-          {% with best=part.offers_for_garage.0 %}
-          <div class="text-xs text-gray-400 uppercase tracking-widest">Meilleur prix</div>
-          <div class="text-lg font-black text-[#7A5C00]">{{ best.unit_price|floatformat:0 }} <span class="text-xs text-gray-500">FCFA</span></div>
-          <div class="text-xs text-gray-500">{{ part.offers_for_garage|length }} fournisseur(s)</div>
-          {% endwith %}
+        {% if part.price_min is not None %}
+          <div class="text-[10px] text-gray-400 uppercase tracking-widest">Min · Moy · Max (FCFA)</div>
+          <div class="flex items-center justify-end gap-1.5 leading-tight">
+            <span class="text-lg font-black text-green-700" title="Prix minimum">{{ part.price_min|floatformat:0 }}</span>
+            <span class="text-gray-300">·</span>
+            <span class="text-sm font-bold text-gray-700" title="Prix moyen">{{ part.price_avg|floatformat:0 }}</span>
+            <span class="text-gray-300">·</span>
+            <span class="text-sm font-bold text-red-700" title="Prix maximum">{{ part.price_max|floatformat:0 }}</span>
+          </div>
+          <div class="text-xs text-gray-500">{{ part.offer_count }} fournisseur(s)</div>
         {% else %}
-          <div class="text-xs text-gray-400">Aucun fournisseur ne propose cette piece</div>
+          <div class="text-xs text-gray-400">Aucun fournisseur ne propose cette pièce</div>
         {% endif %}
       </div>
     </summary>

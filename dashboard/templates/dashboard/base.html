@@ -97,6 +97,7 @@
         </svg>
         Véhicules
       </a>
+      {% if user.garage and "key_board" in user.garage.active_features %}
       <a href="{% url 'key_board' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'key_board' in n or 'keytag' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -105,6 +106,7 @@
         </svg>
         {% tr "Tableau à clés" "Key board" %}
       </a>
+      {% endif %}
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Suivi" "Monitoring" %}</div>
       {% if user.garage and "technical_visits" in user.garage.active_features %}
       <a href="{% url 'visit_list' %}"
@@ -150,6 +152,7 @@
       </a>
       {% endif %}
       {% endif %}
+      {% if user.garage and "repair_orders" in user.garage.active_features %}
       <a href="{% url 'order_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'order' in n or 'task' in n or 'part_' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -159,8 +162,10 @@
         </svg>
         {% tr "Ordres de réparation" "Repair orders" %}
       </a>
+      {% endif %}
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Magasin" "Inventory" %}</div>
+      {% if user.garage and "inventory" in user.garage.active_features %}
       <a href="{% url 'part_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'part' in n and 'order' not in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -172,6 +177,8 @@
         <span class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none">{{ low_stock_count }}</span>
         {% endif %}
       </a>
+      {% endif %}
+      {% if user.garage and "inventory" in user.garage.active_features %}
       <a href="{% url 'supplier_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'supplier' in n and 'supplier_part' not in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -180,6 +187,7 @@
         </svg>
         {% tr "Fournisseurs" "Suppliers" %}
       </a>
+      {% endif %}
       {% if user.garage and "supplier_market" in user.garage.active_features %}
       <a href="{% url 'part_search' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
@@ -221,6 +229,7 @@
       </a>
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Finance" "Finance" %}</div>
+      {% if user.garage and "invoicing" in user.garage.active_features %}
       <a href="{% url 'proforma_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'proforma' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -229,6 +238,8 @@
         </svg>
         {% tr "Ventes" "Sales" %}
       </a>
+      {% endif %}
+      {% if user.garage and "invoicing" in user.garage.active_features %}
       <a href="{% url 'invoice_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'invoice' in n or 'payment' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -237,6 +248,8 @@
         </svg>
         {% tr "Caisse" "Cash register" %}
       </a>
+      {% endif %}
+      {% if user.garage and "expenses" in user.garage.active_features %}
       <a href="{% url 'expense_list' %}"
          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors
                 {% if 'expense' in n %}bg-[#FFCD11] text-[#1A1A1A] font-semibold{% else %}text-gray-300 hover:bg-[#2A2A2A] hover:text-white{% endif %}">
@@ -245,6 +258,7 @@
         </svg>
         {% tr "Dépenses" "Expenses" %}
       </a>
+      {% endif %}
 
       <div class="pt-4 pb-1 px-3 text-[10px] text-[#FFCD11] uppercase tracking-widest font-bold opacity-70">{% tr "Messagerie" "Messaging" %}</div>
       {% if user.garage and "messaging" in user.garage.active_features %}
