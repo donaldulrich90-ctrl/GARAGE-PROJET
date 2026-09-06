@@ -21,11 +21,15 @@ MAKES = [
 
 
 def seed_makes(apps, schema_editor):
+    from django.db.models import Q
     VehicleMake = apps.get_model("catalog", "VehicleMake")
     for name in MAKES:
-        VehicleMake.objects.get_or_create(
-            name=name, defaults={"slug": slugify(name)},
-        )
+        slug = slugify(name)
+        # Ignore si une marque avec ce nom OU ce slug existe deja (robuste
+        # aux marques deja presentes en base, ex: "Citroen" -> slug "citroen").
+        if VehicleMake.objects.filter(Q(name=name) | Q(slug=slug)).exists():
+            continue
+        VehicleMake.objects.create(name=name, slug=slug)
 
 
 def unseed(apps, schema_editor):
